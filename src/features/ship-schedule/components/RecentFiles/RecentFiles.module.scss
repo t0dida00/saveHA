@@ -1,0 +1,210 @@
+@use '@/styles/tokens' as *;
+
+.panel {
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  padding: $space-5 $space-5 $space-3;
+
+  @include mobile {
+    padding: $space-4 $space-4 $space-3;
+  }
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: $weight-bold;
+}
+
+.count {
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+}
+
+.empty {
+  margin: 0;
+  padding: 0 $space-5 $space-5;
+  color: var(--color-muted);
+
+  @include mobile {
+    padding: 0 $space-4 $space-4;
+  }
+}
+
+.list {
+  margin: 0;
+  padding: 0 0 $space-2;
+  list-style: none;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: $space-3;
+  padding: $space-3 $space-4 $space-3 $space-5;
+  border-top: 1px solid var(--color-border);
+
+  @include mobile {
+    padding-left: $space-4;
+  }
+}
+
+.icon {
+  flex: none;
+  margin-top: 8px;
+  color: var(--color-muted);
+}
+
+.info {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  margin: 0;
+  line-height: 36px;
+  overflow: hidden;
+  font-weight: $weight-strong;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meta {
+  margin: 2px 0 0;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.iconButtonOn {
+  background: var(--color-hover);
+  color: var(--color-text);
+}
+
+// Full width of the item, under the name and the buttons
+.details {
+  flex-basis: 100%;
+  padding: $space-2 $space-3;
+  border-radius: $radius-sm;
+  background: var(--color-hover);
+}
+
+.itemSelected {
+  background: var(--color-hover);
+}
+
+.select {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 9px 0 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+}
+
+.compareBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2;
+  padding: 0 $space-4 $space-3 $space-5;
+
+  @include mobile {
+    padding-left: $space-4;
+  }
+}
+
+.compareHint {
+  flex: 1;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.textButton {
+  padding: $space-1 $space-2;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: $weight-semibold;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.compareButton {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-3;
+  border: 2px solid var(--color-primary);
+  border-radius: $radius-md;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.875rem;
+  font-weight: $weight-bold;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-strong);
+    background: var(--color-primary-strong);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}

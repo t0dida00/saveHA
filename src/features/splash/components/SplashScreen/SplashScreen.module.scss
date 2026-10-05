@@ -1,0 +1,198 @@
+@use '@/styles/tokens' as *;
+
+$boat-size: 56px;
+$wave-size: 32px;
+// How far the hull sits down into the first wave line
+$draft: 14px;
+
+// Whole splash is about 2s: sail ends at 1.6s, exit fade starts at DURATION_MS (2s) in the .tsx
+$sail-start: 100ms;
+$sail-duration: 1500ms;
+$greeting-at: 350ms;
+$subline-at: 650ms;
+
+.splash {
+  @include page-shell;
+  // Cap the column at the screen width so long text wraps on small screens
+  grid-template-columns: minmax(0, 1fr);
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--color-bg);
+  transition:
+    opacity 350ms ease,
+    transform 350ms ease;
+}
+
+.leaving {
+  opacity: 0;
+  transform: scale(1.02);
+}
+
+// Sized to its widest line of text; the voyage stretches to match, so the boat
+// sails exactly the width of the greeting
+.body {
+  width: fit-content;
+  max-width: 100%;
+}
+
+// Sailboat crossing the waves, left to right
+
+.voyage {
+  position: relative;
+  height: $boat-size + $wave-size - $draft;
+  margin-bottom: $space-6;
+}
+
+.track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: calc(100% - #{$boat-size});
+}
+
+// Translating by 100% of its own width moves the boat the full length of the track
+.mover {
+  width: 100%;
+  opacity: 0;
+  animation:
+    appear 400ms ease $sail-start forwards,
+    sail $sail-duration cubic-bezier(0.45, 0, 0.25, 1) $sail-start forwards;
+}
+
+// Filled with the page color so the hull hides the waves behind it, as if sitting in the water
+.boat {
+  display: block;
+  color: var(--color-text);
+  fill: var(--color-bg);
+  transform-origin: 50% 90%;
+  animation: bob 1s ease-in-out infinite;
+}
+
+// Waves drift against the boat's heading; the edges fade into the page
+.sea {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  opacity: 0;
+  animation: appear 500ms ease forwards;
+}
+
+.waves {
+  display: flex;
+  width: max-content;
+  animation: drift 6s linear infinite;
+}
+
+.waveStrip {
+  display: flex;
+  flex: none;
+  gap: $space-3;
+  padding-right: $space-3;
+}
+
+.wave {
+  flex: none;
+  color: var(--color-muted);
+  opacity: 0.45;
+}
+
+// Greeting
+
+.greeting {
+  margin: 0 0 $space-3;
+  padding-bottom: 0.08em;
+  overflow: hidden;
+  font-size: clamp(2.25rem, 7vw, 3.5rem);
+  font-weight: $weight-bold;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.greetingLine {
+  display: inline-block;
+  transform: translateY(105%);
+  animation: rise 500ms $ease-out $greeting-at forwards;
+}
+
+.subline {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: clamp(1.125rem, 3vw, 1.375rem);
+  font-weight: $weight-regular;
+  line-height: 1.45;
+  text-wrap: pretty;
+  opacity: 0;
+  animation: appear 400ms ease $subline-at forwards;
+}
+
+@keyframes appear {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sail {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+// Rocks on the swell: rises and leans forward, then settles and leans back
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(3deg);
+  }
+}
+
+// One strip is exactly half the row, so -50% loops seamlessly
+@keyframes drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes rise {
+  to {
+    transform: none;
+  }
+}
+
+@include reduced-motion {
+  .splash,
+  .mover,
+  .boat,
+  .sea,
+  .waves,
+  .greetingLine,
+  .subline {
+    animation: none;
+    transition: none;
+  }
+
+  // Show the finished scene: boat at journey's end, everything visible
+  .mover {
+    opacity: 1;
+    transform: translateX(100%);
+  }
+
+  .sea,
+  .subline {
+    opacity: 1;
+  }
+
+  .greetingLine {
+    transform: none;
+  }
+}

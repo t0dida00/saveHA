@@ -1,0 +1,41 @@
+@use 'tokens' as *;
+
+:root {
+  // Core colors: white (#fff) background and slate (#232f3f) text.
+  // Every other tone is a mix of the two. Light only, whatever the system theme.
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-border: #d7dadc;
+  --color-text: #232f3f;
+  --color-muted: #656d79;
+  --color-primary: #232f3f;
+  --color-primary-strong: #121a26;
+  --color-on-primary: #ffffff;
+  --color-sidebar: #ffffff;
+  --color-hover: rgb(35 47 63 / 0.07);
+  --color-danger: #c4322b;
+  --color-success: #1e7a46;
+  --color-changed: #dbe8fb;
+  --color-added: #dcf3e4;
+  --color-removed: #eceef0;
+
+  color-scheme: light;
+  font-family: $font-family;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}

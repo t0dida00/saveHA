@@ -1,0 +1,124 @@
+@use '@/styles/tokens' as *;
+
+.root {
+  position: relative;
+  max-width: 26rem;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  width: 100%;
+  padding: $space-3 $space-4;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: inherit;
+  font-size: 1.0625rem;
+  font-weight: $weight-semibold;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+
+  &:hover {
+    border-color: var(--color-muted);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    border-color: var(--color-primary);
+  }
+}
+
+.placeholder {
+  color: var(--color-muted);
+  font-weight: $weight-regular;
+}
+
+.chevron,
+.chevronOpen {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform 150ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.list {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + #{$space-1});
+  left: 0;
+  right: 0;
+  max-height: min(24rem, 60vh);
+  margin: 0;
+  padding: $space-1;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgb(35 47 63 / 0.14);
+}
+
+.option {
+  display: grid;
+  grid-template-columns: auto 3rem 1fr;
+  align-items: center;
+  gap: $space-3;
+  width: 100%;
+  padding: $space-2 $space-3;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.checkbox {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-sm;
+}
+
+.checkboxOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.allItem {
+  margin-bottom: $space-1;
+  padding-bottom: $space-1;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.allLabel {
+  grid-column: 2 / -1;
+  font-weight: $weight-bold;
+}
+
+.code {
+  font-weight: $weight-bold;
+}
+
+.route {
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}

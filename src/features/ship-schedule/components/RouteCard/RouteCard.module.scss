@@ -1,0 +1,232 @@
+@use '@/styles/tokens' as *;
+
+.card {
+  position: relative;
+  background: var(--color-surface);
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: 0 $space-2 0 $space-1;
+}
+
+// Lifted row while it is being dragged
+.dragging {
+  z-index: 2;
+  border-radius: $radius-md;
+  box-shadow: 0 12px 28px rgb(35 47 63 / 0.18);
+  outline: 1px solid var(--color-border);
+}
+
+.handle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 36px;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: grab;
+  touch-action: none;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.heading {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: inherit;
+}
+
+.toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1 $space-3;
+  width: 100%;
+  padding: $space-3 $space-4 $space-3 $space-2;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    outline-offset: -3px;
+  }
+}
+
+.chevron,
+.chevronOpen {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform 150ms ease;
+}
+
+.chevron {
+  transform: rotate(-90deg);
+}
+
+.code {
+  font-size: 1.125rem;
+  font-weight: $weight-bold;
+}
+
+.route {
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+.badge {
+  padding: 2px $space-2;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+  font-weight: $weight-strong;
+}
+
+.body {
+  padding: $space-1 $space-4 $space-4 calc(#{$space-4} + 20px + #{$space-3});
+
+  @include mobile {
+    padding-left: $space-4;
+  }
+}
+
+.websiteCodes {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  font-weight: $weight-semibold;
+  letter-spacing: 0.02em;
+}
+
+.remove {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr;
+  align-items: start;
+  gap: $space-2 $space-3;
+
+  & + & {
+    margin-top: $space-3;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  // Same height as a chip, so the label lines up with the first row of chips
+  min-height: 40px;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+
+  @include mobile {
+    min-height: 0;
+  }
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+}
+
+.chip {
+  min-width: 3.5rem;
+  padding: 6px $space-3;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-muted);
+  font-weight: $weight-strong;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+
+  &:hover {
+    border-color: var(--color-muted);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.chipOn {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  &:hover {
+    border-color: var(--color-primary-strong);
+    background: var(--color-primary-strong);
+    color: var(--color-on-primary);
+  }
+}
+
+.warning {
+  grid-column: 2;
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  font-weight: $weight-semibold;
+
+  @include mobile {
+    grid-column: 1;
+  }
+}

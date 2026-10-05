@@ -1,0 +1,78 @@
+@use '@/styles/tokens' as *;
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+}
+
+.content {
+  width: min(100%, 90rem);
+  padding: $space-6 $space-6 $space-7;
+}
+
+// The top bar only exists on mobile, where the sidebar is a drawer
+.topbar {
+  display: none;
+}
+
+.backdrop {
+  display: none;
+}
+
+@include mobile {
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: $space-2;
+    min-height: 56px;
+    padding: 0 $space-2;
+    border-bottom: 1px solid var(--color-border);
+    background: var(--color-bg);
+  }
+
+  .menuButton {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 0;
+    border-radius: $radius-md;
+    background: transparent;
+    color: var(--color-text);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-hover);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .brand {
+    font-size: 1.125rem;
+    font-weight: $weight-bold;
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  .content {
+    padding: $space-5 $space-4 $space-6;
+  }
+}

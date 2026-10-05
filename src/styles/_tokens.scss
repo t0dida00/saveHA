@@ -1,0 +1,57 @@
+// Design tokens shared by every SCSS module: `@use '@/styles/tokens' as *;`
+// Colors live as CSS custom properties in global.scss so they can switch with the color scheme.
+
+$font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+$weight-regular: 400;
+$weight-semibold: 600;
+$weight-strong: 700;
+$weight-bold: 800;
+
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-5: 24px;
+$space-6: 40px;
+$space-7: 64px;
+
+$radius-sm: 4px;
+$radius-md: 10px;
+
+$content-width: 34rem;
+
+$ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+$ease-in-out: cubic-bezier(0.7, 0, 0.2, 1);
+
+@mixin focus-ring {
+  outline: 3px solid color-mix(in srgb, var(--color-primary) 45%, transparent);
+  outline-offset: 2px;
+}
+
+@mixin reduced-motion {
+  @media (prefers-reduced-motion: reduce) {
+    @content;
+  }
+}
+
+// Full-screen, vertically centered page with a left-aligned content column
+@mixin page-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: $space-5 $space-4;
+}
+
+@mixin content-column {
+  width: min(100%, $content-width);
+}
+
+$breakpoint-md: 768px;
+
+@mixin mobile {
+  @media (max-width: #{$breakpoint-md - 1px}) {
+    @content;
+  }
+}

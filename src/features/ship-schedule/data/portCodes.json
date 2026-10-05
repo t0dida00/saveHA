@@ -1,0 +1,87 @@
+[
+  {
+    "code": "HPH",
+    "websiteCode": "VNHPH",
+    "isOrigin": true
+  },
+  {
+    "code": "VUT",
+    "websiteCode": "VNCMP",
+    "isOrigin": true
+  },
+  {
+    "code": "LAX",
+    "websiteCode": "USLAX",
+    "isOrigin": false
+  },
+  {
+    "code": "LGB",
+    "websiteCode": "USLGB",
+    "isOrigin": false
+  },
+  {
+    "code": "OAK",
+    "websiteCode": "USOAK",
+    "isOrigin": false
+  },
+  {
+    "code": "TIW",
+    "websiteCode": "USTIW",
+    "isOrigin": false
+  },
+  {
+    "code": "VAN",
+    "websiteCode": "CAVAN",
+    "isOrigin": false
+  },
+  {
+    "code": "HAF",
+    "websiteCode": "CAHAL",
+    "isOrigin": false
+  },
+  {
+    "code": "HAL",
+    "websiteCode": "CAHAL",
+    "isOrigin": false
+  },
+  {
+    "code": "NYC",
+    "websiteCode": "USNYC",
+    "isOrigin": false
+  },
+  {
+    "code": "SAV",
+    "websiteCode": "USSAV",
+    "isOrigin": false
+  },
+  {
+    "code": "JAK",
+    "websiteCode": "USJAX",
+    "isOrigin": false
+  },
+  {
+    "code": "JAX",
+    "websiteCode": "USJAX",
+    "isOrigin": false
+  },
+  {
+    "code": "ORF",
+    "websiteCode": "USORF",
+    "isOrigin": false
+  },
+  {
+    "code": "CHS",
+    "websiteCode": "USCHS",
+    "isOrigin": false
+  },
+  {
+    "code": "HOU",
+    "websiteCode": "USHOU",
+    "isOrigin": false
+  },
+  {
+    "code": "MOB",
+    "websiteCode": "USMOB",
+    "isOrigin": false
+  }
+]

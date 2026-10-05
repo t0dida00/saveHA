@@ -1,0 +1,291 @@
+@use '@/styles/tokens' as *;
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+  margin-bottom: $space-5;
+
+  @include mobile {
+    flex-direction: column;
+  }
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 12rem;
+}
+
+.label {
+  margin-bottom: $space-2;
+  font-weight: $weight-semibold;
+}
+
+.control {
+  min-height: 52px;
+  padding: $space-3 $space-4;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: inherit;
+  font-size: 1.0625rem;
+  transition: border-color 150ms ease;
+
+  &:hover {
+    border-color: var(--color-muted);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    border-color: var(--color-primary);
+  }
+}
+
+.selectWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+// Native arrow hidden; the same chevron as the services dropdown is drawn on top
+.select {
+  appearance: none;
+  padding-right: $space-6;
+  cursor: pointer;
+}
+
+.selectIcon {
+  position: absolute;
+  top: 50%;
+  right: $space-4;
+  color: var(--color-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 60fr) minmax(0, 40fr);
+  align-items: start;
+  gap: $space-5;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.main {
+  min-width: 0;
+}
+
+.section {
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+}
+
+.sectionBody {
+  padding: $space-5;
+
+  @include mobile {
+    padding: $space-4;
+  }
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.resetAll {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  flex: none;
+  height: 36px;
+  padding: 0 $space-3;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: $weight-bold;
+}
+
+.empty {
+  margin: $space-4 0 0;
+  color: var(--color-muted);
+}
+
+.cards {
+  margin: $space-4 0 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+  padding: $space-4 $space-5;
+  border-top: 1px solid var(--color-border);
+
+  @include mobile {
+    padding: $space-4;
+  }
+}
+
+.saveStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  margin: 0 auto 0 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+
+  @include mobile {
+    flex-basis: 100%;
+  }
+}
+
+.saveStatusSaved {
+  color: var(--color-success);
+}
+
+.saveStatusError {
+  color: var(--color-danger);
+}
+
+%button {
+  padding: $space-3 $space-5;
+  border-radius: $radius-md;
+  font-size: 1.0625rem;
+  font-weight: $weight-bold;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 100ms ease;
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  @extend %button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-strong);
+    background: var(--color-primary-strong);
+  }
+
+  // Loading: stays fully visible (not the faded disabled look)
+  &[aria-busy='true'] {
+    opacity: 1;
+    cursor: progress;
+  }
+}
+
+.spinner {
+  flex: none;
+  animation: spin 800ms linear infinite;
+}
+
+.elapsed {
+  min-width: 2.5ch;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  font-weight: $weight-semibold;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@include reduced-motion {
+  .spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+.secondary {
+  @extend %button;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+}
+
+.error,
+.success {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  margin: $space-4 0 0;
+  font-weight: $weight-semibold;
+
+  svg {
+    flex: none;
+    margin-top: 2px;
+  }
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.success {
+  color: var(--color-success);
+}
