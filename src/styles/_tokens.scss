@@ -21,6 +21,9 @@ $radius-md: 10px;
 
 $content-width: 34rem;
 
+// Height shared by the sidebar's Log out area and the page footer, so their bands line up
+$footer-height: 68px;
+
 $ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 $ease-in-out: cubic-bezier(0.7, 0, 0.2, 1);
 

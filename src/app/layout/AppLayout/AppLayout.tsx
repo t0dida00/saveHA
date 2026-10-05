@@ -5,6 +5,7 @@ import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppLayout.module.scss'
 
 const COLLAPSED_KEY = 'saveha.sidebarCollapsed'
+const YEAR = new Date().getFullYear()
 
 function readCollapsed(): boolean {
   try {
@@ -68,6 +69,11 @@ export function AppLayout() {
         <main className={styles.content}>
           <Outlet />
         </main>
+
+        <footer className={styles.footer}>
+          <span>© {YEAR} SaveHA. All rights reserved.</span>
+          <span>Built by Khoa Dinh</span>
+        </footer>
       </div>
     </div>
   )

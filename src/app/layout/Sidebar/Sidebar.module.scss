@@ -117,8 +117,25 @@ $width-collapsed: 72px;
 }
 
 .footer {
-  padding: $space-3;
-  border-top: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  flex: none;
+  height: $footer-height;
+  padding: 0 $space-3;
+  border-top: 1px solid var(--color-primary);
+  // Same band as the page footer: #232f3f with white text
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  .item {
+    border-radius: $radius-sm;
+    color: var(--color-on-primary);
+
+    &:hover {
+      background: rgb(255 255 255 / 0.1);
+      color: var(--color-on-primary);
+    }
+  }
 }
 
 // Desktop: icon-only rail
