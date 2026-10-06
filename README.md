@@ -14,6 +14,7 @@ Built with React 19, TypeScript, Vite and SCSS modules.
   - Drag services to reorder them.
   - **Save** remembers your services, ports and order in the browser. **Cancel** drops unsaved changes.
   - **Get Schedule** asks the schedule API and saves the CSV it returns.
+- **Scraper status** under the ONE title: a green dot and **Alive** when the server's last scraper health check passed, otherwise a red dot and **Error**, followed by the time of that check (or why there's no result).
 - **Update** (in Results) fetches the newest CSV made by the schedule API's scheduled job. The time of the last update shows under the button.
 - **Results** keeps the 10 most recent CSV files, newest first. For each file you can:
   - see when it was made and for which search (ⓘ);
@@ -119,7 +120,7 @@ A red warning appears if a port that a service uses has no website code. Get Sch
 
 ## Schedule API
 
-The app calls two endpoints on `HOST_URL`.
+The app calls three endpoints on `HOST_URL`.
 
 **Get Schedule:**
 
@@ -160,6 +161,16 @@ GET {HOST_URL}/schedules/one/weekly/latest
 ```
 
 If Results already has that file (same name and content), Update doesn't add it again. A scheduled file's ⓘ says "Scheduled run on the server" because the app doesn't know which search made it.
+
+**Scraper status:** returns the verdict of the API's last scheduled health check. It never starts a scrape. A `404` (no check yet) shows as **Error**.
+
+```http
+GET {HOST_URL}/schedules/one/healthCheck/latest
+```
+
+```json
+{ "alive": true, "checkedAt": "2026-10-06T02:00:12.000Z", "seconds": 12 }
+```
 
 A quick check that the API is up: `GET {HOST_URL}/health`.
 
@@ -204,7 +215,7 @@ src/
     splash/               Loading screen
     dashboard/            Dashboard page
     ship-schedule/        Check ship schedule
-      components/         ServicePicker, RouteCard, RecentFiles, CsvPreview, CsvCompare, PortCodesEditor
+      components/         ServicePicker, RouteCard, ScraperStatus, RecentFiles, CsvPreview, CsvCompare, PortCodesEditor
       data/               Service list, default port codes (portCodes.json), port code store
       hooks/              Saved selection, recent files
       services/           Schedule API call

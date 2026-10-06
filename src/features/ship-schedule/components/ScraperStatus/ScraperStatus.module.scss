@@ -1,0 +1,48 @@
+@use '@/styles/tokens' as *;
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-1;
+  margin: $space-1 0 0;
+  font-size: 0.875rem;
+}
+
+.label {
+  font-weight: $weight-semibold;
+}
+
+// Time and reason stay muted; only the dot and label take the status color
+.detail {
+  color: var(--color-muted);
+}
+
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.checking {
+  color: var(--color-muted);
+}
+
+.alive {
+  color: var(--color-success);
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

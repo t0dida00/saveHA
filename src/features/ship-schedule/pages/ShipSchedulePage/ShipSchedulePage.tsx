@@ -14,6 +14,7 @@ import { useEffect, useId, useState } from 'react'
 import { PageHeader } from '@/shared/components'
 import { RecentFiles, type UpdateState } from '../../components/RecentFiles/RecentFiles'
 import { RouteCard } from '../../components/RouteCard/RouteCard'
+import { ScraperStatus } from '../../components/ScraperStatus/ScraperStatus'
 import { ServicePicker } from '../../components/ServicePicker/ServicePicker'
 import { isDefaultRoute, SERVICES_BY_CODE } from '../../data/services'
 import { useRecentFiles } from '../../hooks/useRecentFiles'
@@ -184,9 +185,12 @@ export function ShipSchedulePage() {
           <section className={styles.section} aria-labelledby={sectionTitleId}>
             <div className={styles.sectionBody}>
               <div className={styles.sectionHead}>
-                <h2 id={sectionTitleId} className={styles.sectionTitle}>
-                  ONE
-                </h2>
+                <div className={styles.sectionTitleGroup}>
+                  <h2 id={sectionTitleId} className={styles.sectionTitle}>
+                    ONE
+                  </h2>
+                  <ScraperStatus />
+                </div>
                 <button
                   type="button"
                   className={styles.resetAll}
