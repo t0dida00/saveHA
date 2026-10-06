@@ -1,5 +1,6 @@
 import { SERVICES, toWebsiteCode } from '../data/services'
 import type { ScheduleFile, ScheduleSelection } from '../types'
+import { readCachedLatest, storeCachedLatest } from './latestScheduleCache'
 
 export class ScheduleApiNotConfiguredError extends Error {
   constructor() {
@@ -82,8 +83,14 @@ export class NoLatestScheduleError extends Error {
   }
 }
 
-// The newest CSV made by the API's scheduled job
-export async function getLatestSchedule(): Promise<ScheduleFile> {
+/**
+ * The newest CSV made by the API's scheduled job. Every fetch refreshes the 1-day cache;
+ * `cached: true` answers from that cache when it's fresh instead of asking the API.
+ */
+export async function getLatestSchedule({ cached = false } = {}): Promise<ScheduleFile> {
+  const fromCache = cached ? readCachedLatest() : undefined
+  if (fromCache) return fromCache
+
   if (!__HOST_URL__) throw new ScheduleApiNotConfiguredError()
 
   const response = await fetch(`${__HOST_URL__}/schedules/one/weekly/latest`)
@@ -91,11 +98,13 @@ export async function getLatestSchedule(): Promise<ScheduleFile> {
   if (!response.ok) throw new Error(`Schedule API returned ${response.status} ${response.statusText}`)
 
   const createdAt = new Date()
-  return {
+  const file: ScheduleFile = {
     id: newFileId(createdAt),
     name: fileNameFrom(response.headers.get('Content-Disposition')) ?? 'ONE-latest.csv',
     createdAt: createdAt.toISOString(),
     scheduled: true,
     content: await response.text(),
   }
+  storeCachedLatest(file)
+  return file
 }

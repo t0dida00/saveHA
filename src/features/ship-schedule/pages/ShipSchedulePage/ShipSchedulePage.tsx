@@ -114,12 +114,13 @@ export function ShipSchedulePage() {
     }
   }
 
-  // The scheduled job's file only changes when it runs again, so skip one we already have
+  // The scheduled job's file only changes weekly: a copy fetched within the last day is reused,
+  // and one already in Results isn't added again
   const handleUpdate = async () => {
     if (update.status === 'loading') return
     setUpdate({ status: 'loading' })
     try {
-      const file = await getLatestSchedule()
+      const file = await getLatestSchedule({ cached: true })
       setLastUpdate(file.createdAt)
       storeLastUpdate(file.createdAt)
       const known = files.some((other) => other.name === file.name && other.content === file.content)

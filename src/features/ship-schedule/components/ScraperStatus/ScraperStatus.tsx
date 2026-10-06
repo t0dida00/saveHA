@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getScraperHealth } from '../../services/getScraperHealth'
+import { getScraperHealth, readCachedScraperHealth, type ScraperHealth } from '../../services/getScraperHealth'
 import { formatReceived } from '../../utils/formatDate'
 import styles from './ScraperStatus.module.scss'
 
@@ -8,16 +8,25 @@ type Status =
   | { state: 'alive'; checkedAt: string }
   | { state: 'error'; checkedAt?: string; reason?: string }
 
+const toStatus = (health: ScraperHealth): Status => ({
+  state: health.alive ? 'alive' : 'error',
+  checkedAt: health.checkedAt,
+})
+
 /** Green "Alive" when the server's last scraper check passed, red "Error" otherwise, with when it ran */
 export function ScraperStatus() {
-  const [status, setStatus] = useState<Status>({ state: 'checking' })
+  // An answer fetched within the last day shows straight away
+  const [status, setStatus] = useState<Status>(() => {
+    const cached = readCachedScraperHealth()
+    return cached ? toStatus(cached) : { state: 'checking' }
+  })
 
+  // With a fresh cache this resolves from it without a request
   useEffect(() => {
     let cancelled = false
     getScraperHealth()
       .then((health) => {
-        if (cancelled) return
-        setStatus({ state: health.alive ? 'alive' : 'error', checkedAt: health.checkedAt })
+        if (!cancelled) setStatus(toStatus(health))
       })
       .catch((error: unknown) => {
         if (!cancelled) setStatus({ state: 'error', reason: error instanceof Error ? error.message : 'Check failed.' })

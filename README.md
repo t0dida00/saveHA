@@ -160,7 +160,7 @@ Access-Control-Expose-Headers: Content-Disposition
 GET {HOST_URL}/schedules/one/weekly/latest
 ```
 
-If Results already has that file (same name and content), Update doesn't add it again. A scheduled file's ⓘ says "Scheduled run on the server" because the app doesn't know which search made it.
+Update reuses a copy fetched within the last day (the job only runs weekly), shared with the Dashboard. If Results already has that file (same name and content), Update doesn't add it again. A scheduled file's ⓘ says "Scheduled run on the server" because the app doesn't know which search made it.
 
 **Scraper status:** returns the verdict of the API's last scheduled health check. It never starts a scrape. A `404` (no check yet) shows as **Error**.
 
@@ -184,6 +184,8 @@ There is no database. Everything is stored in the browser's local storage, so it
 | The 10 most recent result files | `saveha.shipSchedule.files` |
 | Port codes from Settings | `saveha.shipSchedule.portCodes` |
 | Time of the last Update | `saveha.shipSchedule.lastUpdate` |
+| Latest scheduled file, cached for 1 day (Dashboard) | `saveha.shipSchedule.latest` |
+| Scraper status, cached for 1 day | `saveha.shipSchedule.scraperHealth` |
 
 Clearing the browser's site data resets all of it.
 

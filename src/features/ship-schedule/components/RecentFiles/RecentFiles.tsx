@@ -3,6 +3,7 @@ import { useId, useState } from 'react'
 import { ConfirmDialog } from '@/shared/components'
 import { MAX_FILES } from '../../hooks/useRecentFiles'
 import type { ScheduleFile } from '../../types'
+import { downloadFile } from '../../utils/downloadFile'
 import { formatQueryDate, formatReceived } from '../../utils/formatDate'
 import { CsvCompare } from '../CsvCompare/CsvCompare'
 import { CsvPreview } from '../CsvPreview/CsvPreview'
@@ -33,15 +34,6 @@ function formatQuery(file: ScheduleFile) {
   if (file.scheduled || !file.date) return 'Scheduled run on the server'
   const services = !file.services || file.services === 'all' ? 'All services' : file.services.join(', ')
   return `${formatQueryDate(file.date)} · ${file.weeks} weeks · ${services}`
-}
-
-function download(file: ScheduleFile) {
-  const url = URL.createObjectURL(new Blob([file.content], { type: 'text/csv;charset=utf-8' }))
-  const link = document.createElement('a')
-  link.href = url
-  link.download = file.name
-  link.click()
-  URL.revokeObjectURL(url)
 }
 
 // Only the name shows; the info button reveals when it was received, its size and its query
@@ -100,7 +92,7 @@ function FileItem({ file, selected, selectDisabled, onSelect, onPreview, onRemov
         <button
           type="button"
           className={styles.iconButton}
-          onClick={() => download(file)}
+          onClick={() => downloadFile(file)}
           aria-label={`Download ${file.name}`}
           title="Download"
         >

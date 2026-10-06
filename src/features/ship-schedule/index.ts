@@ -1,2 +1,8 @@
 export { ShipSchedulePage } from './pages/ShipSchedulePage/ShipSchedulePage'
 export { PortCodesEditor } from './components/PortCodesEditor/PortCodesEditor'
+export { CsvPreview } from './components/CsvPreview/CsvPreview'
+export { getLatestSchedule, NoLatestScheduleError } from './services/getSchedule'
+export { readCachedLatest } from './services/latestScheduleCache'
+export type { ScheduleFile } from './types'
+export { downloadFile } from './utils/downloadFile'
+export { parseCsv } from './utils/parseCsv'
