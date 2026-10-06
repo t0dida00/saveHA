@@ -8,7 +8,7 @@ import {
   readCachedLatest,
   type ScheduleFile,
 } from '@/features/ship-schedule'
-import oneLogo from '../../assets/one-logo.svg'
+import oneLogo from '@/shared/assets/one-logo.svg'
 import styles from './OneCard.module.scss'
 
 // The API's weekly job runs on Saturdays at 01:00 UTC (vercel.json in the API repo: "0 1 * * 6")

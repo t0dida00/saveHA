@@ -11,6 +11,7 @@ import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifi
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CircleAlert, CircleCheck, ChevronDown, LoaderCircle, RotateCcw } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
+import oneLogo from '@/shared/assets/one-logo.svg'
 import { PageHeader } from '@/shared/components'
 import { RecentFiles, type UpdateState } from '../../components/RecentFiles/RecentFiles'
 import { RouteCard } from '../../components/RouteCard/RouteCard'
@@ -188,7 +189,7 @@ export function ShipSchedulePage() {
               <div className={styles.sectionHead}>
                 <div className={styles.sectionTitleGroup}>
                   <h2 id={sectionTitleId} className={styles.sectionTitle}>
-                    ONE
+                    <img src={oneLogo} alt="ONE" width={90} height={40} className={styles.logo} />
                   </h2>
                   <ScraperStatus />
                 </div>
