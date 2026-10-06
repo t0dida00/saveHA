@@ -40,6 +40,8 @@ function storeLastUpdate(iso: string) {
   }
 }
 
+const SAVED_NOTICE_MS = 10_000
+
 type RequestState =
   | { status: 'idle' }
   | { status: 'loading' }
@@ -57,7 +59,7 @@ function LoadingLabel() {
 
   return (
     <>
-      <LoaderCircle size={20} aria-hidden="true" className={styles.spinner} />
+      <LoaderCircle size={16} aria-hidden="true" className={styles.spinner} />
       Getting schedule…
       <span className={styles.elapsed}>{seconds}s</span>
     </>
@@ -91,6 +93,8 @@ export function ShipSchedulePage() {
   const [update, setUpdate] = useState<UpdateState>({ status: 'idle' })
   const [lastUpdate, setLastUpdate] = useState(loadLastUpdate)
   const [saveFailed, setSaveFailed] = useState(false)
+  // When Save last succeeded; "Saved" shows for SAVED_NOTICE_MS after it
+  const [savedAt, setSavedAt] = useState<number>()
   const dateId = useId()
   const weeksId = useId()
   const sectionTitleId = useId()
@@ -134,7 +138,17 @@ export function ShipSchedulePage() {
     }
   }
 
-  const handleSave = () => setSaveFailed(!save())
+  const handleSave = () => {
+    const saved = save()
+    setSaveFailed(!saved)
+    setSavedAt(saved ? Date.now() : undefined)
+  }
+
+  useEffect(() => {
+    if (savedAt === undefined) return
+    const timer = setTimeout(() => setSavedAt(undefined), SAVED_NOTICE_MS)
+    return () => clearTimeout(timer)
+  }, [savedAt])
 
   const handleCancel = () => {
     cancelChanges()
@@ -251,9 +265,11 @@ export function ShipSchedulePage() {
                 ) : isDirty ? (
                   'Unsaved changes'
                 ) : (
-                  <>
-                    <CircleCheck size={16} aria-hidden="true" /> Saved
-                  </>
+                  savedAt !== undefined && (
+                    <>
+                      <CircleCheck size={16} aria-hidden="true" /> Saved
+                    </>
+                  )
                 )}
               </p>
               <button type="button" className={styles.secondary} onClick={handleCancel} disabled={!isDirty}>

@@ -1,5 +1,6 @@
 import { CircleAlert, CircleCheck, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
+import { ConfirmDialog } from '@/shared/components'
 import { DEFAULT_PORT_CODES, setPortCodes, usePortCodes, type PortCode } from '../../data/portCodesStore'
 import { ALL_PORTS } from '../../data/services'
 import styles from './PortCodesEditor.module.scss'
@@ -23,6 +24,8 @@ export function PortCodesEditor() {
   const [rows, setRows] = useState(() => toRows(saved))
   const [status, setStatus] = useState<'idle' | 'saved' | 'storageFailed'>('idle')
   const titleId = useId()
+  const [deleteId, setDeleteId] = useState<number>()
+  const deleteRow = rows.find((row) => row.id === deleteId)
 
   const draft = toList(rows)
   const isDirty = !sameList(draft, saved)
@@ -65,6 +68,12 @@ export function PortCodesEditor() {
   const removeRow = (id: number) => {
     setStatus('idle')
     setRows((current) => current.filter((row) => row.id !== id))
+  }
+
+  // A blank row goes straight away; one with codes asks first
+  const requestRemove = (row: Row) => {
+    if (row.code || row.websiteCode) setDeleteId(row.id)
+    else removeRow(row.id)
   }
 
   const handleSave = () => {
@@ -151,7 +160,7 @@ export function PortCodesEditor() {
                 <button
                   type="button"
                   className={styles.iconButton}
-                  onClick={() => removeRow(row.id)}
+                  onClick={() => requestRemove(row)}
                   aria-label={`Remove ${row.code || 'this row'}`}
                   title="Remove"
                 >
@@ -201,6 +210,25 @@ export function PortCodesEditor() {
           Save
         </button>
       </footer>
+
+      {deleteRow && (
+        <ConfirmDialog
+          title="Remove this port code?"
+          confirmLabel="Remove"
+          onConfirm={() => {
+            removeRow(deleteRow.id)
+            setDeleteId(undefined)
+          }}
+          onCancel={() => setDeleteId(undefined)}
+        >
+          <p>
+            <strong>
+              {deleteRow.code || '(no code)'} → {deleteRow.websiteCode || '(no website code)'}
+            </strong>{' '}
+            will be removed from the list. Press Save to apply it, or Cancel to bring it back.
+          </p>
+        </ConfirmDialog>
+      )}
     </section>
   )
 }
