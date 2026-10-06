@@ -1,0 +1,371 @@
+@use '@/styles/tokens' as *;
+
+// Floats above the bubble at the bottom-right; full screen on phones
+.panel {
+  position: fixed;
+  right: $space-5;
+  bottom: calc(#{$space-5} + 44px + #{$space-3});
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: min(26rem, calc(100vw - #{2 * $space-5}));
+  height: min(38rem, calc(100dvh - 120px));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-bg);
+  box-shadow: 0 12px 40px rgb(35 47 63 / 0.18);
+
+  &[hidden] {
+    display: none;
+  }
+
+  @include mobile {
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-2 $space-2 $space-2 $space-4;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.title {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: $weight-bold;
+}
+
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: rgb(255 255 255 / 0.12);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// Messages scroll; the composer stays at the bottom of the panel
+.chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.messages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: $space-3;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: $space-4;
+}
+
+.message {
+  max-width: 90%;
+  margin: 0;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+// The user's own questions sit on the right in the app's dark slate
+.user {
+  align-self: flex-end;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  white-space: pre-wrap;
+}
+
+.assistant {
+  align-self: flex-start;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+// Answers arrive as Markdown: lists and tables of voyages, bold service names
+.markdown {
+  > :first-child {
+    margin-top: 0;
+  }
+
+  > :last-child {
+    margin-bottom: 0;
+  }
+
+  p,
+  ul,
+  ol {
+    margin: $space-2 0;
+  }
+
+  ul,
+  ol {
+    padding-left: $space-5;
+  }
+
+  li + li {
+    margin-top: $space-1;
+  }
+
+  strong {
+    font-weight: $weight-strong;
+  }
+
+  code {
+    padding: 0 $space-1;
+    border-radius: $radius-sm;
+    background: var(--color-hover);
+    font-size: 0.9em;
+  }
+
+  .tableWrap {
+    margin: $space-2 0;
+    overflow-x: auto;
+  }
+
+  table {
+    border-collapse: collapse;
+    font-size: 0.9375rem;
+    white-space: nowrap;
+  }
+
+  th,
+  td {
+    padding: $space-1 $space-3;
+    border: 1px solid var(--color-border);
+    text-align: left;
+  }
+
+  th {
+    background: var(--color-hover);
+    font-weight: $weight-strong;
+  }
+}
+
+.sources {
+  margin: $space-3 0 0;
+  padding-top: $space-2;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+.thinking {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  color: var(--color-muted);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 3px;
+
+  span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.2s $ease-in-out infinite;
+  }
+
+  span:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+
+  span:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  @include reduced-motion {
+    span {
+      animation: none;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.25;
+  }
+
+  40% {
+    opacity: 1;
+  }
+}
+
+.empty {
+  padding: $space-4;
+  border: 2px dashed var(--color-border);
+  border-radius: $radius-md;
+}
+
+.emptyIntro {
+  margin: 0 0 $space-3;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+}
+
+.emptyTitle {
+  margin: 0 0 $space-3;
+  font-weight: $weight-semibold;
+}
+
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.suggestion {
+  padding: $space-2 $space-3;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary);
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  margin: 0 $space-4 $space-2;
+  color: var(--color-danger);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+}
+
+// Pinned to the bottom of the panel while the conversation scrolls
+.composer {
+  display: flex;
+  flex: none;
+  margin: 0 $space-3 $space-3;
+  align-items: flex-end;
+  gap: $space-1;
+  padding: $space-1;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  box-shadow: 0 4px 16px rgb(35 47 63 / 0.08);
+  transition: border-color 150ms ease;
+
+  &:focus-within {
+    @include focus-ring;
+    border-color: var(--color-primary);
+  }
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  max-height: 8rem;
+  padding: $space-1 $space-2;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  resize: none;
+  field-sizing: content;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.send {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: $radius-sm;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-strong);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@include mobile {
+  .message {
+    max-width: 100%;
+  }
+
+  // Let cells wrap ("W41/2026" over "(05/10-11/10)") so a week table fits without swiping
+  .markdown table {
+    white-space: normal;
+  }
+}

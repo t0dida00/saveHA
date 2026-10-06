@@ -1,6 +1,7 @@
 import { Menu } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import { Outlet } from 'react-router'
+import { AssistantBubble } from '@/features/assistant'
 import { Sidebar } from '../Sidebar/Sidebar'
 import styles from './AppLayout.module.scss'
 
@@ -75,6 +76,8 @@ export function AppLayout() {
           <span>Built by Khoa Dinh</span>
         </footer>
       </div>
+
+      <AssistantBubble />
     </div>
   )
 }
