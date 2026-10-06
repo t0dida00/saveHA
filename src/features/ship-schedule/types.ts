@@ -21,10 +21,12 @@ export type ScheduleFile = {
   name: string
   /** ISO timestamp of when the file was received */
   createdAt: string
-  /** The query that produced it */
-  date: string
-  weeks: number
+  /** True for the latest file made by the API's scheduled job; its query isn't known here */
+  scheduled?: boolean
+  /** The query that produced it (missing on scheduled files) */
+  date?: string
+  weeks?: number
   /** "all" or the service codes that were requested */
-  services: 'all' | string[]
+  services?: 'all' | string[]
   content: string
 }

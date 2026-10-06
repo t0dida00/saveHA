@@ -12,13 +12,13 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import { CircleAlert, CircleCheck, ChevronDown, LoaderCircle, RotateCcw } from 'lucide-react'
 import { useEffect, useId, useState } from 'react'
 import { PageHeader } from '@/shared/components'
-import { RecentFiles } from '../../components/RecentFiles/RecentFiles'
+import { RecentFiles, type UpdateState } from '../../components/RecentFiles/RecentFiles'
 import { RouteCard } from '../../components/RouteCard/RouteCard'
 import { ServicePicker } from '../../components/ServicePicker/ServicePicker'
 import { isDefaultRoute, SERVICES_BY_CODE } from '../../data/services'
 import { useRecentFiles } from '../../hooks/useRecentFiles'
 import { useScheduleSelection, WEEK_OPTIONS } from '../../hooks/useScheduleSelection'
-import { getSchedule } from '../../services/getSchedule'
+import { getLatestSchedule, getSchedule } from '../../services/getSchedule'
 import styles from './ShipSchedulePage.module.scss'
 
 type RequestState =
@@ -69,6 +69,7 @@ export function ShipSchedulePage() {
   }
   const { files, addFile, removeFile } = useRecentFiles()
   const [request, setRequest] = useState<RequestState>({ status: 'idle' })
+  const [update, setUpdate] = useState<UpdateState>({ status: 'idle' })
   const [saveFailed, setSaveFailed] = useState(false)
   const dateId = useId()
   const weeksId = useId()
@@ -90,6 +91,24 @@ export function ShipSchedulePage() {
       setRequest({ status: 'success', fileName: file.name })
     } catch (error) {
       setRequest({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong.' })
+    }
+  }
+
+  // The scheduled job's file only changes when it runs again, so skip one we already have
+  const handleUpdate = async () => {
+    if (update.status === 'loading') return
+    setUpdate({ status: 'loading' })
+    try {
+      const file = await getLatestSchedule()
+      const known = files.some((other) => other.name === file.name && other.content === file.content)
+      if (known) {
+        setUpdate({ status: 'success', message: `Already up to date: ${file.name} is in Results.` })
+        return
+      }
+      addFile(file)
+      setUpdate({ status: 'success', message: `${file.name} was added to Results.` })
+    } catch (error) {
+      setUpdate({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong.' })
     }
   }
 
@@ -246,7 +265,7 @@ export function ShipSchedulePage() {
           </div>
         </div>
 
-        <RecentFiles files={files} onRemove={removeFile} />
+        <RecentFiles files={files} onRemove={removeFile} onUpdate={handleUpdate} update={update} />
       </div>
     </>
   )

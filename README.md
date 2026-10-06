@@ -14,6 +14,7 @@ Built with React 19, TypeScript, Vite and SCSS modules.
   - Drag services to reorder them.
   - **Save** remembers your services, ports and order in the browser. **Cancel** drops unsaved changes.
   - **Get Schedule** asks the schedule API and saves the CSV it returns.
+- **Update** (in Results) fetches the newest CSV made by the schedule API's scheduled job.
 - **Results** keeps the 10 most recent CSV files, newest first. For each file you can:
   - see when it was made and for which search (ⓘ);
   - **preview** it as a table, with `N/A` cells in red and `OMIT` cells in yellow;
@@ -118,7 +119,9 @@ A red warning appears if a port that a service uses has no website code. Get Sch
 
 ## Schedule API
 
-The app calls one endpoint on `HOST_URL`:
+The app calls two endpoints on `HOST_URL`.
+
+**Get Schedule:**
 
 ```http
 POST {HOST_URL}/schedules/one/weekly
@@ -149,6 +152,14 @@ The API answers with a CSV file (`text/csv`), with its name in the `Content-Disp
 ```
 Access-Control-Expose-Headers: Content-Disposition
 ```
+
+**Update:** returns the newest CSV made by the API's scheduled job, named by `Content-Disposition` as above. A `404` means the job hasn't made a file yet.
+
+```http
+GET {HOST_URL}/schedules/one/weekly/latest
+```
+
+If Results already has that file (same name and content), Update doesn't add it again. A scheduled file's ⓘ says "Scheduled run on the server" because the app doesn't know which search made it.
 
 A quick check that the API is up: `GET {HOST_URL}/health`.
 

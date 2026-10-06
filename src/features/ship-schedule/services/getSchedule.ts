@@ -47,6 +47,10 @@ function fileNameFrom(disposition: string | null) {
   return match ? decodeURIComponent(match[1]) : undefined
 }
 
+function newFileId(createdAt: Date) {
+  return `${createdAt.getTime()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
 // The API answers with a CSV file (text/csv, named by Content-Disposition)
 export async function getSchedule(selection: ScheduleSelection): Promise<ScheduleFile> {
   if (!__HOST_URL__) throw new ScheduleApiNotConfiguredError()
@@ -61,12 +65,37 @@ export async function getSchedule(selection: ScheduleSelection): Promise<Schedul
 
   const createdAt = new Date()
   return {
-    id: `${createdAt.getTime()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: newFileId(createdAt),
     name: fileNameFrom(response.headers.get('Content-Disposition')) ?? `ONE-${request.date}.csv`,
     createdAt: createdAt.toISOString(),
     date: request.date,
     weeks: request.next,
     services: request.services_routes === 'all' ? 'all' : Object.keys(request.services_routes),
+    content: await response.text(),
+  }
+}
+
+export class NoLatestScheduleError extends Error {
+  constructor() {
+    super("The scheduled job hasn't made a file yet.")
+    this.name = 'NoLatestScheduleError'
+  }
+}
+
+// The newest CSV made by the API's scheduled job
+export async function getLatestSchedule(): Promise<ScheduleFile> {
+  if (!__HOST_URL__) throw new ScheduleApiNotConfiguredError()
+
+  const response = await fetch(`${__HOST_URL__}/schedules/one/weekly/latest`)
+  if (response.status === 404) throw new NoLatestScheduleError()
+  if (!response.ok) throw new Error(`Schedule API returned ${response.status} ${response.statusText}`)
+
+  const createdAt = new Date()
+  return {
+    id: newFileId(createdAt),
+    name: fileNameFrom(response.headers.get('Content-Disposition')) ?? 'ONE-latest.csv',
+    createdAt: createdAt.toISOString(),
+    scheduled: true,
     content: await response.text(),
   }
 }

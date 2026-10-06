@@ -1,4 +1,4 @@
-import { Download, Eye, FileText, GitCompare, Info, Trash2 } from 'lucide-react'
+import { CircleAlert, CircleCheck, Download, Eye, FileText, GitCompare, Info, RefreshCw, Trash2 } from 'lucide-react'
 import { useId, useState } from 'react'
 import { ConfirmDialog } from '@/shared/components'
 import { MAX_FILES } from '../../hooks/useRecentFiles'
@@ -8,9 +8,18 @@ import { CsvCompare } from '../CsvCompare/CsvCompare'
 import { CsvPreview } from '../CsvPreview/CsvPreview'
 import styles from './RecentFiles.module.scss'
 
+export type UpdateState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'success'; message: string }
+
 type RecentFilesProps = {
   files: ScheduleFile[]
   onRemove: (id: string) => void
+  /** Fetch the newest file made by the API's scheduled job */
+  onUpdate: () => void
+  update: UpdateState
 }
 
 function formatSize(text: string) {
@@ -19,7 +28,8 @@ function formatSize(text: string) {
 }
 
 function formatQuery(file: ScheduleFile) {
-  const services = file.services === 'all' ? 'All services' : file.services.join(', ')
+  if (file.scheduled || !file.date) return 'Scheduled run on the server'
+  const services = !file.services || file.services === 'all' ? 'All services' : file.services.join(', ')
   return `${formatQueryDate(file.date)} · ${file.weeks} weeks · ${services}`
 }
 
@@ -117,7 +127,7 @@ function FileItem({ file, selected, selectDisabled, onSelect, onPreview, onRemov
   )
 }
 
-export function RecentFiles({ files, onRemove }: RecentFilesProps) {
+export function RecentFiles({ files, onRemove, onUpdate, update }: RecentFilesProps) {
   const titleId = useId()
   const [previewId, setPreviewId] = useState<string>()
   const previewFile = files.find((file) => file.id === previewId)
@@ -146,6 +156,36 @@ export function RecentFiles({ files, onRemove }: RecentFilesProps) {
         <span className={styles.count}>
           {files.length}/{MAX_FILES}
         </span>
+        <button
+          type="button"
+          className={styles.updateButton}
+          onClick={onUpdate}
+          disabled={update.status === 'loading'}
+          aria-busy={update.status === 'loading'}
+          title="Get the newest file from the scheduled job"
+        >
+          <RefreshCw
+            size={16}
+            aria-hidden="true"
+            className={update.status === 'loading' ? styles.spinning : undefined}
+          />
+          {update.status === 'loading' ? 'Updating…' : 'Update'}
+        </button>
+      </div>
+
+      <div aria-live="polite">
+        {update.status === 'error' && (
+          <p className={`${styles.notice} ${styles.noticeError}`} role="alert">
+            <CircleAlert size={16} aria-hidden="true" />
+            {update.message}
+          </p>
+        )}
+        {update.status === 'success' && (
+          <p className={`${styles.notice} ${styles.noticeSuccess}`}>
+            <CircleCheck size={16} aria-hidden="true" />
+            {update.message}
+          </p>
+        )}
       </div>
 
       {files.length > 1 && (
@@ -171,7 +211,7 @@ export function RecentFiles({ files, onRemove }: RecentFilesProps) {
       )}
 
       {files.length === 0 ? (
-        <p className={styles.empty}>Files from Get Schedule show up here. The {MAX_FILES} most recent are kept.</p>
+        <p className={styles.empty}>Files from Get Schedule and Update show up here. The {MAX_FILES} most recent are kept.</p>
       ) : (
         <ul className={styles.list}>
           {files.map((file) => (
