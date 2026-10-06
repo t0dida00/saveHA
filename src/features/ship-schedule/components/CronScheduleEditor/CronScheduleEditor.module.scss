@@ -1,0 +1,277 @@
+@use '@/styles/tokens' as *;
+
+.section {
+  max-width: 44rem;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+}
+
+.body {
+  padding: $space-5;
+
+  @include mobile {
+    padding: $space-4;
+  }
+}
+
+.title {
+  margin: 0;
+}
+
+.logo {
+  display: block;
+  width: auto;
+  height: 32px;
+}
+
+.intro {
+  margin: $space-2 0 0;
+  color: var(--color-muted);
+}
+
+.current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-1 $space-3;
+  margin-top: $space-4;
+  padding: $space-3 $space-4;
+  border-radius: $radius-md;
+  background: var(--color-hover);
+}
+
+.currentLabel {
+  font-size: 0.8125rem;
+  font-weight: $weight-strong;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.muted {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+// Daily / Weekly / Monthly as one segmented control
+.frequency {
+  margin: $space-4 0 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.segments {
+  display: inline-flex;
+  padding: 3px;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+}
+
+.segment {
+  position: relative;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  span {
+    display: block;
+    padding: $space-1 $space-4;
+    border-radius: $radius-sm;
+    font-size: 0.9375rem;
+    font-weight: $weight-semibold;
+    cursor: pointer;
+  }
+
+  &:hover span {
+    background: var(--color-hover);
+  }
+
+  input:checked + span {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+  }
+
+  input:focus-visible + span {
+    @include focus-ring;
+  }
+
+  input:disabled + span {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-4;
+  margin-top: $space-4;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  min-width: 11rem;
+
+  @include mobile {
+    flex: 1;
+  }
+}
+
+.label {
+  margin-bottom: $space-2;
+  padding: 0;
+  font-weight: $weight-semibold;
+}
+
+.control {
+  min-height: 44px;
+  padding: $space-2 $space-3;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  transition: border-color 150ms ease;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-muted);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    border-color: var(--color-primary);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+  }
+}
+
+.selectWrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.select {
+  appearance: none;
+  padding-right: $space-6;
+  cursor: pointer;
+}
+
+.selectIcon {
+  position: absolute;
+  top: 50%;
+  right: $space-3;
+  color: var(--color-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.preview {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  margin: $space-3 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: $weight-semibold;
+}
+
+.previewError {
+  color: var(--color-danger);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+  padding: $space-4 $space-5;
+  border-top: 1px solid var(--color-border);
+
+  @include mobile {
+    padding: $space-4;
+  }
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  margin: 0 auto 0 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+
+  svg {
+    flex: none;
+  }
+
+  @include mobile {
+    flex-basis: 100%;
+  }
+}
+
+.statusSaved {
+  color: var(--color-success);
+}
+
+.statusError {
+  color: var(--color-danger);
+}
+
+%button {
+  padding: $space-2 $space-4;
+  border-radius: $radius-md;
+  font-size: 0.9375rem;
+  font-weight: $weight-bold;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  @extend %button;
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-strong);
+    background: var(--color-primary-strong);
+  }
+}
+
+.secondary {
+  @extend %button;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -1,0 +1,22 @@
+@use '@/styles/tokens' as *;
+
+// Port codes on the left, the ONE schedule on the right; stacked on narrower screens
+.sections {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  align-items: start;
+  gap: $space-5;
+
+  // Each card caps its own width when it stands alone; side by side they fill their column
+  > section {
+    max-width: none;
+  }
+
+  @media (max-width: 1200px) {
+    grid-template-columns: minmax(0, 1fr);
+
+    > section {
+      max-width: 44rem;
+    }
+  }
+}

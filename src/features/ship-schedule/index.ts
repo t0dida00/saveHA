@@ -1,5 +1,7 @@
 export { ShipSchedulePage } from './pages/ShipSchedulePage/ShipSchedulePage'
 export { ScraperStatus } from './components/ScraperStatus/ScraperStatus'
+export { CronScheduleEditor } from './components/CronScheduleEditor/CronScheduleEditor'
+export { DEFAULT_CRON_SCHEDULE, describeSchedule, nextRun } from './data/cronSchedule'
 export { PortCodesEditor } from './components/PortCodesEditor/PortCodesEditor'
 export { CsvCompare } from './components/CsvCompare/CsvCompare'
 export { CsvPreview } from './components/CsvPreview/CsvPreview'

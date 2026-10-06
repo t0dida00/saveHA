@@ -2,8 +2,11 @@ import { CalendarClock, Download, Eye, FileText } from 'lucide-react'
 import { useId, useState } from 'react'
 import {
   CsvPreview,
+  DEFAULT_CRON_SCHEDULE,
+  describeSchedule,
   downloadFile,
   formatReceived,
+  nextRun,
   parseCsv,
   ScraperStatus,
   useRecentFiles,
@@ -13,22 +16,7 @@ import oneLogo from '@/shared/assets/one-logo.svg'
 import { LatestDifferences } from '../LatestDifferences/LatestDifferences'
 import styles from './OneCard.module.scss'
 
-// The API's weekly job runs on Saturdays at 01:00 UTC (vercel.json in the API repo: "0 1 * * 6")
-const RUN_WEEKDAY_UTC = 6
-const RUN_HOUR_UTC = 1
-
-const weekdayFormat = new Intl.DateTimeFormat('en-US', { weekday: 'long' })
-const timeFormat = new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit' })
 const dateFormat = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
-
-function nextRun(now = new Date()) {
-  const daysAhead = (RUN_WEEKDAY_UTC - now.getUTCDay() + 7) % 7
-  const run = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysAhead, RUN_HOUR_UTC),
-  )
-  if (run <= now) run.setUTCDate(run.getUTCDate() + 7)
-  return run
-}
 
 // Header cells look like "PS7\n(HPH/VUT - LAX/LGB/OAK)"; the first line is the service code
 function servicesIn(file: ScheduleFile) {
@@ -46,7 +34,8 @@ export function OneCard() {
   const { files } = useRecentFiles()
   const latest = files[0]
   const [previewing, setPreviewing] = useState(false)
-  const run = nextRun()
+  // Until the API can report its schedule, the one it's deployed with (editable in Settings later)
+  const run = nextRun(DEFAULT_CRON_SCHEDULE)
 
   const services = latest ? servicesIn(latest) : []
 
@@ -78,7 +67,7 @@ export function OneCard() {
         <p className={styles.row}>
           <CalendarClock size={18} aria-hidden="true" className={styles.icon} />
           <span>
-            Weekly, every {weekdayFormat.format(run)} at {timeFormat.format(run)}
+            {describeSchedule(DEFAULT_CRON_SCHEDULE)}
             <span className={styles.next}>
               Next: <time dateTime={run.toISOString()}>{dateFormat.format(run)}</time>
             </span>
