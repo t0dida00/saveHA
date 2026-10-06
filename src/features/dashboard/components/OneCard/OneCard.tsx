@@ -1,14 +1,16 @@
 import { CalendarClock, Download, Eye, FileText } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import {
   CsvPreview,
   downloadFile,
-  getLatestSchedule,
+  formatReceived,
   parseCsv,
-  readCachedLatest,
+  ScraperStatus,
+  useRecentFiles,
   type ScheduleFile,
 } from '@/features/ship-schedule'
 import oneLogo from '@/shared/assets/one-logo.svg'
+import { LatestDifferences } from '../LatestDifferences/LatestDifferences'
 import styles from './OneCard.module.scss'
 
 // The API's weekly job runs on Saturdays at 01:00 UTC (vercel.json in the API repo: "0 1 * * 6")
@@ -37,54 +39,30 @@ function servicesIn(file: ScheduleFile) {
     .filter(Boolean)
 }
 
-// ONE-06102026.csv → 10/06/2026, the app's mm/dd/yyyy
-function scrapedOn(name: string) {
-  const match = name.match(/(\d{2})(\d{2})(\d{4})/)
-  return match ? `${match[2]}/${match[1]}/${match[3]}` : undefined
-}
-
-type Latest = { state: 'loading' } | { state: 'ready'; file: ScheduleFile } | { state: 'error'; message: string }
-
-/** Dashboard card: the services the weekly job scrapes, when it runs, and its newest CSV */
+/** Dashboard card: the newest file in Results, its services, when the weekly job runs, and what changed */
 export function OneCard() {
   const titleId = useId()
-  // A file fetched within the last day shows straight away, with no request
-  const [latest, setLatest] = useState<Latest>(() => {
-    const file = readCachedLatest()
-    return file ? { state: 'ready', file } : { state: 'loading' }
-  })
+  // Same list as Results, so adding or deleting a file there shows here straight away
+  const { files } = useRecentFiles()
+  const latest = files[0]
   const [previewing, setPreviewing] = useState(false)
   const run = nextRun()
 
-  // With a fresh cache this resolves from it without a request
-  useEffect(() => {
-    let cancelled = false
-    getLatestSchedule({ cached: true })
-      .then((file) => !cancelled && setLatest({ state: 'ready', file }))
-      .catch(
-        (error: unknown) =>
-          !cancelled &&
-          setLatest({ state: 'error', message: error instanceof Error ? error.message : "Couldn't load the file." }),
-      )
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
-  const services = latest.state === 'ready' ? servicesIn(latest.file) : []
+  const services = latest ? servicesIn(latest) : []
 
   return (
     <section className={styles.card} aria-labelledby={titleId}>
       {/* ONE's logo from one-line.com, kept in the repo since their copy's URL changes with each deploy */}
-      <h2 id={titleId} className={styles.title}>
-        <img src={oneLogo} alt="ONE" width={90} height={40} className={styles.logo} />
-      </h2>
+      <div className={styles.head}>
+        <h2 id={titleId} className={styles.title}>
+          <img src={oneLogo} alt="ONE" width={90} height={40} className={styles.logo} />
+        </h2>
+        <ScraperStatus variant="dot" />
+      </div>
 
       <div className={styles.block}>
         <h3 className={styles.label}>Services</h3>
-        {latest.state === 'loading' ? (
-          <p className={styles.muted}>Loading…</p>
-        ) : services.length > 0 ? (
+        {services.length > 0 ? (
           <ul className={styles.services}>
             {services.map((code) => (
               <li key={code} className={styles.service}>
@@ -93,7 +71,7 @@ export function OneCard() {
             ))}
           </ul>
         ) : (
-          <p className={styles.muted}>Shown once the weekly job has made a file.</p>
+          <p className={styles.muted}>Shown once Results has a file.</p>
         )}
       </div>
 
@@ -113,24 +91,23 @@ export function OneCard() {
 
       <div className={styles.block}>
         <h3 className={styles.label}>Latest file</h3>
-        {latest.state === 'loading' && <p className={styles.muted}>Loading…</p>}
-        {latest.state === 'error' && <p className={styles.error}>{latest.message}</p>}
-        {latest.state === 'ready' && (
+        {!latest && <p className={styles.muted}>No files in Results.</p>}
+        {latest && (
           <div className={styles.file}>
             <FileText size={20} aria-hidden="true" className={styles.icon} />
             <div className={styles.fileInfo}>
-              <p className={styles.fileName} title={latest.file.name}>
-                {latest.file.name}
+              <p className={styles.fileName} title={latest.name}>
+                {latest.name}
               </p>
-              {scrapedOn(latest.file.name) && (
-                <p className={styles.muted}>Scraped {scrapedOn(latest.file.name)}</p>
-              )}
+              <p className={styles.muted}>
+                Received <time dateTime={latest.createdAt}>{formatReceived(latest.createdAt)}</time>
+              </p>
             </div>
             <button
               type="button"
               className={styles.iconButton}
               onClick={() => setPreviewing(true)}
-              aria-label={`Preview ${latest.file.name}`}
+              aria-label={`Preview ${latest.name}`}
               title="Preview"
             >
               <Eye size={18} aria-hidden="true" />
@@ -138,8 +115,8 @@ export function OneCard() {
             <button
               type="button"
               className={styles.iconButton}
-              onClick={() => downloadFile(latest.file)}
-              aria-label={`Download ${latest.file.name}`}
+              onClick={() => downloadFile(latest)}
+              aria-label={`Download ${latest.name}`}
               title="Download"
             >
               <Download size={18} aria-hidden="true" />
@@ -148,9 +125,12 @@ export function OneCard() {
         )}
       </div>
 
-      {previewing && latest.state === 'ready' && (
-        <CsvPreview file={latest.file} onClose={() => setPreviewing(false)} />
-      )}
+      <div className={styles.block}>
+        <h3 className={styles.label}>Differences</h3>
+        <LatestDifferences />
+      </div>
+
+      {previewing && latest && <CsvPreview file={latest} onClose={() => setPreviewing(false)} />}
     </section>
   )
 }

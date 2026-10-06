@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { getScraperHealth, readCachedScraperHealth, type ScraperHealth } from '../../services/getScraperHealth'
 import { formatReceived } from '../../utils/formatDate'
 import styles from './ScraperStatus.module.scss'
@@ -13,8 +13,14 @@ const toStatus = (health: ScraperHealth): Status => ({
   checkedAt: health.checkedAt,
 })
 
+type ScraperStatusProps = {
+  /** "dot": just the colored dot, with the details in a tooltip on hover or focus */
+  variant?: 'full' | 'dot'
+}
+
 /** Green "Alive" when the server's last scraper check passed, red "Error" otherwise, with when it ran */
-export function ScraperStatus() {
+export function ScraperStatus({ variant = 'full' }: ScraperStatusProps) {
+  const tooltipId = useId()
   // An answer fetched within the last day shows straight away
   const [status, setStatus] = useState<Status>(() => {
     const cached = readCachedScraperHealth()
@@ -39,6 +45,25 @@ export function ScraperStatus() {
   const label = status.state === 'checking' ? 'Checking…' : status.state === 'alive' ? 'Alive' : 'Error'
   const checkedAt = status.state === 'checking' ? undefined : status.checkedAt
   const reason = status.state === 'error' ? status.reason : undefined
+
+  if (variant === 'dot') {
+    const detail = checkedAt ? `Last check: ${formatReceived(checkedAt)}` : (reason ?? 'Checking the scraper…')
+    return (
+      // Focusable so keyboard users can open the tooltip too
+      <span
+        className={`${styles.dotOnly} ${styles[status.state]}`}
+        tabIndex={0}
+        role="status"
+        aria-label={`Scraper: ${label}`}
+        aria-describedby={tooltipId}
+      >
+        <span className={styles.dot} aria-hidden="true" />
+        <span id={tooltipId} role="tooltip" className={styles.tooltip}>
+          {detail}
+        </span>
+      </span>
+    )
+  }
 
   return (
     <p className={`${styles.status} ${styles[status.state]}`} role="status">

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useSyncExternalStore } from 'react'
 import type { ScheduleFile } from '../types'
 
 const STORAGE_KEY = 'saveha.shipSchedule.files'
@@ -29,25 +29,44 @@ function storeFiles(files: ScheduleFile[]) {
   }
 }
 
+// One list shared by every page (Results, the Dashboard), so a change shows everywhere at once
+let current = loadFiles()
+const listeners = new Set<() => void>()
+
+function setFiles(next: ScheduleFile[]) {
+  current = next
+  storeFiles(next)
+  listeners.forEach((listener) => listener())
+}
+
+const getFiles = () => current
+
+// Other tabs and the installed app window write the same key; follow their changes too
+function onStorage(event: StorageEvent) {
+  if (event.key !== STORAGE_KEY && event.key !== null) return
+  current = loadFiles()
+  listeners.forEach((listener) => listener())
+}
+
+function subscribe(listener: () => void) {
+  if (listeners.size === 0) window.addEventListener('storage', onStorage)
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+    if (listeners.size === 0) window.removeEventListener('storage', onStorage)
+  }
+}
+
+function addFile(file: ScheduleFile) {
+  setFiles(newestFirst([file, ...current]).slice(0, MAX_FILES))
+}
+
+function removeFile(id: string) {
+  setFiles(current.filter((file) => file.id !== id))
+}
+
 /** The last MAX_FILES CSV files returned by the schedule API, newest first, kept in this browser */
 export function useRecentFiles() {
-  const [files, setFiles] = useState(loadFiles)
-
-  const addFile = useCallback((file: ScheduleFile) => {
-    setFiles((current) => {
-      const next = newestFirst([file, ...current]).slice(0, MAX_FILES)
-      storeFiles(next)
-      return next
-    })
-  }, [])
-
-  const removeFile = useCallback((id: string) => {
-    setFiles((current) => {
-      const next = current.filter((file) => file.id !== id)
-      storeFiles(next)
-      return next
-    })
-  }, [])
-
+  const files = useSyncExternalStore(subscribe, getFiles)
   return { files, addFile, removeFile }
 }
