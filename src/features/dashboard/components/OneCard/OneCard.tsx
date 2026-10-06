@@ -53,12 +53,10 @@ export function OneCard() {
   return (
     <section className={styles.card} aria-labelledby={titleId}>
       {/* ONE's logo from one-line.com, kept in the repo since their copy's URL changes with each deploy */}
-      <div className={styles.head}>
-        <h2 id={titleId} className={styles.title}>
-          <img src={oneLogo} alt="ONE" width={90} height={40} className={styles.logo} />
-        </h2>
-        <ScraperStatus variant="dot" />
-      </div>
+      <ScraperStatus variant="bar" />
+      <h2 id={titleId} className={styles.title}>
+        <img src={oneLogo} alt="ONE" width={90} height={40} className={styles.logo} />
+      </h2>
 
       <div className={styles.block}>
         <h3 className={styles.label}>Services</h3>
@@ -81,9 +79,8 @@ export function OneCard() {
           <CalendarClock size={18} aria-hidden="true" className={styles.icon} />
           <span>
             Weekly, every {weekdayFormat.format(run)} at {timeFormat.format(run)}
-            <span className={styles.muted}>
-              {' '}
-              · Next: <time dateTime={run.toISOString()}>{dateFormat.format(run)}</time>
+            <span className={styles.next}>
+              Next: <time dateTime={run.toISOString()}>{dateFormat.format(run)}</time>
             </span>
           </span>
         </p>

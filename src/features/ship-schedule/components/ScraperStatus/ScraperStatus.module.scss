@@ -47,25 +47,15 @@
   white-space: nowrap;
 }
 
-// Dot-only variant: a larger hit area around the dot, with a tooltip below it on hover or focus
-.dotOnly {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
+// Bar variant: a colored strip over the parent's top border. The hit area is taller than the strip so it's
+// easy to hover; the strip follows the parent's rounded corners.
+.bar {
+  position: absolute;
+  top: -1px;
+  right: -1px;
+  left: -1px;
+  height: 14px;
   cursor: help;
-
-  .dot {
-    width: 12px;
-    height: 12px;
-  }
-
-  &:hover,
-  &:focus-visible {
-    background: var(--color-hover);
-  }
 
   &:focus-visible {
     @include focus-ring;
@@ -78,11 +68,18 @@
   }
 }
 
+.barFill {
+  display: block;
+  height: 10px;
+  border-radius: $radius-md $radius-md 0 0;
+  background: currentColor;
+}
+
 // Right-aligned so it never runs past the card's right edge
 .tooltip {
   position: absolute;
   top: calc(100% + #{$space-1});
-  right: 0;
+  right: $space-3;
   z-index: 5;
   padding: $space-1 $space-2;
   border-radius: $radius-sm;

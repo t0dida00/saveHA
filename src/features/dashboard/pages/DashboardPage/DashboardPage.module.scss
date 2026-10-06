@@ -3,7 +3,7 @@
 // One column per card; more carriers can sit side by side later
 .cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 26rem));
   align-items: start;
   gap: $space-5;
 }

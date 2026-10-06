@@ -14,8 +14,11 @@ const toStatus = (health: ScraperHealth): Status => ({
 })
 
 type ScraperStatusProps = {
-  /** "dot": just the colored dot, with the details in a tooltip on hover or focus */
-  variant?: 'full' | 'dot'
+  /**
+   * "bar": a strip in the status color across the top of the parent, which must be position: relative.
+   * The details show in a tooltip on hover or focus.
+   */
+  variant?: 'full' | 'bar'
 }
 
 /** Green "Alive" when the server's last scraper check passed, red "Error" otherwise, with when it ran */
@@ -46,18 +49,18 @@ export function ScraperStatus({ variant = 'full' }: ScraperStatusProps) {
   const checkedAt = status.state === 'checking' ? undefined : status.checkedAt
   const reason = status.state === 'error' ? status.reason : undefined
 
-  if (variant === 'dot') {
+  if (variant === 'bar') {
     const detail = checkedAt ? `Last check: ${formatReceived(checkedAt)}` : (reason ?? 'Checking the scraper…')
     return (
       // Focusable so keyboard users can open the tooltip too
       <span
-        className={`${styles.dotOnly} ${styles[status.state]}`}
+        className={`${styles.bar} ${styles[status.state]}`}
         tabIndex={0}
         role="status"
         aria-label={`Scraper: ${label}`}
         aria-describedby={tooltipId}
       >
-        <span className={styles.dot} aria-hidden="true" />
+        <span className={styles.barFill} aria-hidden="true" />
         <span id={tooltipId} role="tooltip" className={styles.tooltip}>
           {detail}
         </span>

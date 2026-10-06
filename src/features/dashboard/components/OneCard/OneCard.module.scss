@@ -1,6 +1,7 @@
 @use '@/styles/tokens' as *;
 
 .card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: $space-4;
@@ -12,13 +13,6 @@
   @include mobile {
     padding: $space-4;
   }
-}
-
-.head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: $space-3;
 }
 
 .title {
@@ -51,6 +45,13 @@
 
 .muted {
   margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+// Next run date on its own line under the schedule
+.next {
+  display: block;
   color: var(--color-muted);
   font-size: 0.875rem;
 }
