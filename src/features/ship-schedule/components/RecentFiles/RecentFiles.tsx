@@ -20,6 +20,8 @@ type RecentFilesProps = {
   /** Fetch the newest file made by the API's scheduled job */
   onUpdate: () => void
   update: UpdateState
+  /** ISO timestamp of the last successful Update */
+  lastUpdate?: string
 }
 
 function formatSize(text: string) {
@@ -127,7 +129,7 @@ function FileItem({ file, selected, selectDisabled, onSelect, onPreview, onRemov
   )
 }
 
-export function RecentFiles({ files, onRemove, onUpdate, update }: RecentFilesProps) {
+export function RecentFiles({ files, onRemove, onUpdate, update, lastUpdate }: RecentFilesProps) {
   const titleId = useId()
   const [previewId, setPreviewId] = useState<string>()
   const previewFile = files.find((file) => file.id === previewId)
@@ -153,24 +155,32 @@ export function RecentFiles({ files, onRemove, onUpdate, update }: RecentFilesPr
         <h2 id={titleId} className={styles.title}>
           Results
         </h2>
-        <span className={styles.count}>
-          {files.length}/{MAX_FILES}
-        </span>
-        <button
-          type="button"
-          className={styles.updateButton}
-          onClick={onUpdate}
-          disabled={update.status === 'loading'}
-          aria-busy={update.status === 'loading'}
-          title="Get the newest file from the scheduled job"
-        >
-          <RefreshCw
-            size={16}
-            aria-hidden="true"
-            className={update.status === 'loading' ? styles.spinning : undefined}
-          />
-          {update.status === 'loading' ? 'Updating…' : 'Update'}
-        </button>
+        <div className={styles.update}>
+          <button
+            type="button"
+            className={styles.updateButton}
+            onClick={onUpdate}
+            disabled={update.status === 'loading'}
+            aria-busy={update.status === 'loading'}
+            title="Get the newest file from the scheduled job"
+          >
+            <RefreshCw
+              size={16}
+              aria-hidden="true"
+              className={update.status === 'loading' ? styles.spinning : undefined}
+            />
+            {update.status === 'loading' ? 'Updating…' : 'Update'}
+          </button>
+          <p className={styles.lastUpdate}>
+            {lastUpdate ? (
+              <>
+                Last update: <time dateTime={lastUpdate}>{formatReceived(lastUpdate)}</time>
+              </>
+            ) : (
+              'Not updated yet'
+            )}
+          </p>
+        </div>
       </div>
 
       <div aria-live="polite">

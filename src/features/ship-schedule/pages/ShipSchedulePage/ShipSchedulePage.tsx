@@ -21,6 +21,24 @@ import { useScheduleSelection, WEEK_OPTIONS } from '../../hooks/useScheduleSelec
 import { getLatestSchedule, getSchedule } from '../../services/getSchedule'
 import styles from './ShipSchedulePage.module.scss'
 
+const LAST_UPDATE_KEY = 'saveha.shipSchedule.lastUpdate'
+
+function loadLastUpdate() {
+  try {
+    return localStorage.getItem(LAST_UPDATE_KEY) ?? undefined
+  } catch {
+    return undefined
+  }
+}
+
+function storeLastUpdate(iso: string) {
+  try {
+    localStorage.setItem(LAST_UPDATE_KEY, iso)
+  } catch {
+    // Only shown as a hint; fine to lose
+  }
+}
+
 type RequestState =
   | { status: 'idle' }
   | { status: 'loading' }
@@ -70,6 +88,7 @@ export function ShipSchedulePage() {
   const { files, addFile, removeFile } = useRecentFiles()
   const [request, setRequest] = useState<RequestState>({ status: 'idle' })
   const [update, setUpdate] = useState<UpdateState>({ status: 'idle' })
+  const [lastUpdate, setLastUpdate] = useState(loadLastUpdate)
   const [saveFailed, setSaveFailed] = useState(false)
   const dateId = useId()
   const weeksId = useId()
@@ -100,6 +119,8 @@ export function ShipSchedulePage() {
     setUpdate({ status: 'loading' })
     try {
       const file = await getLatestSchedule()
+      setLastUpdate(file.createdAt)
+      storeLastUpdate(file.createdAt)
       const known = files.some((other) => other.name === file.name && other.content === file.content)
       if (known) {
         setUpdate({ status: 'success', message: `Already up to date: ${file.name} is in Results.` })
@@ -265,7 +286,7 @@ export function ShipSchedulePage() {
           </div>
         </div>
 
-        <RecentFiles files={files} onRemove={removeFile} onUpdate={handleUpdate} update={update} />
+        <RecentFiles files={files} onRemove={removeFile} onUpdate={handleUpdate} update={update} lastUpdate={lastUpdate} />
       </div>
     </>
   )

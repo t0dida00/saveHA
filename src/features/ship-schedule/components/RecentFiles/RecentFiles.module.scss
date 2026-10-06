@@ -25,12 +25,6 @@
   font-weight: $weight-bold;
 }
 
-.count {
-  color: var(--color-muted);
-  font-size: 0.9375rem;
-  font-weight: $weight-semibold;
-}
-
 .empty {
   margin: 0;
   padding: 0 $space-5 $space-5;
@@ -210,9 +204,24 @@
   }
 }
 
+// Update button with the time of the last update under it
+.update {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: $space-1;
+}
+
+.lastUpdate {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 .updateButton {
   display: inline-flex;
-  flex: none;
   align-items: center;
   gap: $space-1;
   padding: $space-1 $space-3;

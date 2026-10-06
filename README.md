@@ -14,7 +14,7 @@ Built with React 19, TypeScript, Vite and SCSS modules.
   - Drag services to reorder them.
   - **Save** remembers your services, ports and order in the browser. **Cancel** drops unsaved changes.
   - **Get Schedule** asks the schedule API and saves the CSV it returns.
-- **Update** (in Results) fetches the newest CSV made by the schedule API's scheduled job.
+- **Update** (in Results) fetches the newest CSV made by the schedule API's scheduled job. The time of the last update shows under the button.
 - **Results** keeps the 10 most recent CSV files, newest first. For each file you can:
   - see when it was made and for which search (ⓘ);
   - **preview** it as a table, with `N/A` cells in red and `OMIT` cells in yellow;
@@ -172,6 +172,7 @@ There is no database. Everything is stored in the browser's local storage, so it
 | Saved services, ports and order | `saveha.shipSchedule.selection` |
 | The 10 most recent result files | `saveha.shipSchedule.files` |
 | Port codes from Settings | `saveha.shipSchedule.portCodes` |
+| Time of the last Update | `saveha.shipSchedule.lastUpdate` |
 
 Clearing the browser's site data resets all of it.
 
