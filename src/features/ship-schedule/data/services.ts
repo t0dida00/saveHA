@@ -1,9 +1,13 @@
 import { getPortCodes, type PortCode } from './portCodesStore'
 
-export type Carrier = 'one' | 'hpl'
+export type Carrier = 'one' | 'hpl' | 'cma'
 
 export type Service = {
   code: string
+  /** What the carrier calls it, when the code alone doesn't say, e.g. "Columbus JAX/WC" */
+  name?: string
+  /** The carrier's own code when it differs, e.g. PEARL is PEARLAS1 on cma-cgm.com */
+  siteCode?: string
   origins: string[]
   destinations: string[]
 }
@@ -30,12 +34,25 @@ const HPL_SERVICES: Service[] = [
   { code: 'WC1', origins: ['HPL_VUT'], destinations: ['LAX', 'LGB'] },
 ]
 
-export const SERVICES: Record<Carrier, Service[]> = { one: ONE_SERVICES, hpl: HPL_SERVICES }
+// From the CMA CGM sheet: "Columbus JAX/WC => MTE" means the Columbus JAX/WC service, now called MTE.
+// VUT departures use HPL_VUT (VNVUT), as Hapag-Lloyd does, not ONE's VUT (VNCMP).
+const CMA_SERVICES: Service[] = [
+  { code: 'MTE', name: 'Columbus JAX/WC', origins: ['HPL_VUT'], destinations: ['LAX', 'OAK'] },
+  { code: 'YANGTSE', name: 'Yangtze', origins: ['HCM'], destinations: ['LGB'] },
+  { code: 'PEARL', name: 'Pearl / PEARLAS1 → MTE', siteCode: 'PEARLAS1', origins: ['HPH'], destinations: ['LAX'] },
+  { code: 'EXX', name: 'Eagle Express X', origins: ['HPH'], destinations: ['LAX'] },
+  { code: 'PNW', name: 'Columbus PNW, feeder PEX3, transit via SHA', origins: ['HPL_VUT'], destinations: ['SEA'] },
+  { code: 'CBX', name: 'Columbus JAX/EC, CLB Suez', origins: ['HPL_VUT'], destinations: ['HAF', 'NYC', 'ORF', 'SAV', 'CHS'] },
+  { code: 'SAX', origins: ['HPL_VUT'], destinations: ['NYC', 'SAV', 'CHS'] },
+  { code: 'TWS', name: 'CBX via Panama', origins: ['HPH'], destinations: ['ORF', 'SAV', 'CHS', 'MIA'] },
+  { code: 'PEX3', name: 'PEX3 via Panama', origins: ['HPL_VUT'], destinations: ['HOU', 'MOB', 'NEW'] },
+]
 
-const SERVICES_BY_CODE: Record<Carrier, Map<string, Service>> = {
-  one: new Map(ONE_SERVICES.map((service) => [service.code, service])),
-  hpl: new Map(HPL_SERVICES.map((service) => [service.code, service])),
-}
+export const SERVICES: Record<Carrier, Service[]> = { one: ONE_SERVICES, hpl: HPL_SERVICES, cma: CMA_SERVICES }
+
+const SERVICES_BY_CODE = Object.fromEntries(
+  Object.entries(SERVICES).map(([carrier, list]) => [carrier, new Map(list.map((service) => [service.code, service]))]),
+) as Record<Carrier, Map<string, Service>>
 
 export function findService(carrier: Carrier, code: string | undefined) {
   return code ? SERVICES_BY_CODE[carrier].get(code) : undefined

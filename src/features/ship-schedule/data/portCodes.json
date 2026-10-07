@@ -15,6 +15,11 @@
     "isOrigin": true
   },
   {
+    "code": "HCM",
+    "websiteCode": "VNSGN",
+    "isOrigin": true
+  },
+  {
     "code": "LAX",
     "websiteCode": "USLAX",
     "isOrigin": false
@@ -87,6 +92,16 @@
   {
     "code": "MOB",
     "websiteCode": "USMOB",
+    "isOrigin": false
+  },
+  {
+    "code": "SEA",
+    "websiteCode": "USSEA",
+    "isOrigin": false
+  },
+  {
+    "code": "MIA",
+    "websiteCode": "USMIA",
     "isOrigin": false
   }
 ]

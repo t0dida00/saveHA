@@ -8,7 +8,7 @@ export const MAX_FILES = 10
 
 // Newest first, at most MAX_FILES of each carrier
 function newestFirst(files: ScheduleFile[]) {
-  const counts = { one: 0, hpl: 0 }
+  const counts = { one: 0, hpl: 0, cma: 0 }
   return [...files]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .filter((file) => ++counts[fileCarrier(file)] <= MAX_FILES)

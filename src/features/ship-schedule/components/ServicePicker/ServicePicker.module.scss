@@ -54,7 +54,7 @@
   top: calc(100% + #{$space-1});
   left: 0;
   right: 0;
-  max-height: min(24rem, 60vh);
+  // max-height comes from the component: the room left on screen, up to 24rem
   margin: 0;
   padding: $space-1;
   overflow-y: auto;
@@ -65,9 +65,16 @@
   box-shadow: 0 12px 32px rgb(35 47 63 / 0.14);
 }
 
+// Opens above the button when there isn't room below it
+.listUp {
+  top: auto;
+  bottom: calc(100% + #{$space-1});
+}
+
 .option {
   display: grid;
-  grid-template-columns: auto 3rem 1fr;
+  // --code-width: the longest code in the list, set by the component
+  grid-template-columns: auto var(--code-width, 3rem) minmax(0, 1fr);
   align-items: center;
   gap: $space-3;
   width: 100%;
@@ -118,7 +125,26 @@
   font-weight: $weight-bold;
 }
 
+// Route on top, the service's full name (if any) under it; each on one line, cut with … when too long
+.details {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.route,
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .route {
   color: var(--color-muted);
   font-size: 0.9375rem;
+}
+
+.name {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
 }

@@ -25,11 +25,21 @@ const isPortCode = (value: unknown): value is PortCode =>
 // Carrier rows were first saved as HPL/VUT; they are HPL_VUT now
 export const renameCarrierPort = (code: string) => code.replace(/^HPL\//, 'HPL_')
 
-// Saves from before Hapag-Lloyd had no HPL_ rows; without them HPL would search with ONE's codes
+// Ports CMA CGM's services brought in; saves from before then don't have them
+const CMA_PORTS = ['HCM', 'SEA', 'MIA']
+
+// Saves from before a carrier was added lack its rows: HPL_ ones (without them HPL would search
+// with ONE's codes) and CMA CGM's ports. Each set is added once, when none of it is there yet.
 function withCarrierDefaults(stored: PortCode[]): PortCode[] {
-  const codes = stored.map((entry) => ({ ...entry, code: renameCarrierPort(entry.code) }))
-  if (codes.some((entry) => entry.code.startsWith('HPL_'))) return codes
-  return [...codes, ...DEFAULT_PORT_CODES.filter((entry) => entry.code.startsWith('HPL_'))]
+  let codes = stored.map((entry) => ({ ...entry, code: renameCarrierPort(entry.code) }))
+  const addMissing = (isNew: (code: string) => boolean) => {
+    if (!codes.some((entry) => isNew(entry.code))) {
+      codes = [...codes, ...DEFAULT_PORT_CODES.filter((entry) => isNew(entry.code))]
+    }
+  }
+  addMissing((code) => code.startsWith('HPL_'))
+  addMissing((code) => CMA_PORTS.includes(code))
+  return codes
 }
 
 // Saved codes from Settings, or the defaults from portCodes.json.

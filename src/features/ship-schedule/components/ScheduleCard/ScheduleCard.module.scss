@@ -66,6 +66,11 @@
   &[data-carrier='hpl'] {
     height: 22px;
   }
+
+  // The wordmark sits inside two arcs: taller so its letters match the others
+  &[data-carrier='cma'] {
+    height: 44px;
+  }
 }
 
 .sectionTitle {

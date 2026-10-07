@@ -9,6 +9,7 @@ export function DashboardPage() {
       <div className={styles.cards}>
         <CarrierCard carrier="one" />
         <CarrierCard carrier="hpl" />
+        <CarrierCard carrier="cma" />
       </div>
     </>
   )

@@ -30,6 +30,7 @@ type RecentFilesProps = {
 const CARRIERS: { carrier: Carrier; name: string }[] = [
   { carrier: 'one', name: 'ONE' },
   { carrier: 'hpl', name: 'Hapag-Lloyd' },
+  { carrier: 'cma', name: 'CMA CGM' },
 ]
 
 function formatSize(text: string) {

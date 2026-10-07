@@ -14,7 +14,7 @@ function Cell({ value }: { value: string }) {
   if (isLink(value)) {
     return (
       <a href={value} target="_blank" rel="noreferrer" className={styles.link}>
-        Open on {value.includes('hapag-lloyd.com') ? 'Hapag-Lloyd' : 'ONE'} ↗
+        Open on {value.includes('hapag-lloyd.com') ? 'Hapag-Lloyd' : value.includes('cma-cgm.com') ? 'CMA CGM' : 'ONE'} ↗
       </a>
     )
   }

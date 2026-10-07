@@ -31,6 +31,11 @@
   &[data-carrier='hpl'] {
     height: 22px;
   }
+
+  // CMA CGM's logo has its swooshes above and below the name, so it needs more height
+  &[data-carrier='cma'] {
+    height: 44px;
+  }
 }
 
 .block {

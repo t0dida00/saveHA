@@ -24,7 +24,14 @@ export type WeeklyColumn = {
  * Weeks with no sailing read OMIT; weeks with several list each on its own line.
  * Sailings outside fromDate … fromDate + weeks are left out.
  */
-export function weeklyCsv(columns: WeeklyColumn[], fromDate: string, weeks: number, corner: string): string {
+export function weeklyCsv(
+  columns: WeeklyColumn[],
+  fromDate: string,
+  weeks: number,
+  corner: string,
+  /** Between the vessel text and the date: "/ " (HPL) or " / " (CMA) */
+  separator = '/ ',
+): string {
   const first = Date.parse(`${fromDate}T00:00:00Z`)
   const lastDay = new Date(first + (weeks * 7 - 1) * DAY_MS).toISOString().slice(0, 10)
   const rows = [
@@ -41,7 +48,7 @@ export function weeklyCsv(columns: WeeklyColumn[], fromDate: string, weeks: numb
           column.sailings
             .filter((s) => s.departure >= fromDate && s.departure <= lastDay && mondayOf(s.departure) === monday)
             .sort((a, b) => a.departure.localeCompare(b.departure))
-            .map((s) => `${s.vessel}/ ${monthDay(s.departure)}`)
+            .map((s) => `${s.vessel}${separator}${monthDay(s.departure)}`)
             .join('\n') || 'OMIT'
         )
       }),

@@ -1,6 +1,7 @@
 import { CalendarClock, Download, Eye, FileText, Hand } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
 import {
+  BRANDS,
   CsvPreview,
   DEFAULT_CRON_SCHEDULE,
   describeSchedule,
@@ -14,17 +15,13 @@ import {
   type Carrier,
   type ScheduleFile,
 } from '@/features/ship-schedule'
-import hplLogo from '@/shared/assets/hpl-logo.svg'
-import oneLogo from '@/shared/assets/one-logo.svg'
 import { LatestDifferences } from '../LatestDifferences/LatestDifferences'
 import styles from './CarrierCard.module.scss'
 
-const dateFormat = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
+// Where a manual carrier's links go
+const MANUAL_SITES: Record<Exclude<Carrier, 'one'>, string> = { hpl: 'hapag-lloyd.com', cma: 'cma-cgm.com' }
 
-const BRANDS: Record<Carrier, { name: string; logo: string; width: number; height: number }> = {
-  one: { name: 'ONE', logo: oneLogo, width: 90, height: 40 },
-  hpl: { name: 'Hapag-Lloyd', logo: hplLogo, width: 130, height: 20 },
-}
+const dateFormat = new Intl.DateTimeFormat('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })
 
 // Header cells look like "PS7\n(HPH/VUT - LAX/LGB/OAK)"; the first line is the service code
 function servicesIn(file: ScheduleFile) {
@@ -54,11 +51,11 @@ export function CarrierCard({ carrier }: { carrier: Carrier }) {
 
   return (
     <section className={styles.card} aria-labelledby={titleId}>
-      {/* ONE is scraped by the API, so its bar shows the scraper's health; Hapag-Lloyd is copied by hand, so it's always up */}
+      {/* ONE is scraped by the API, so its bar shows the scraper's health; Hapag-Lloyd and CMA CGM are copied by hand, so they're always up */}
       {carrier === 'one' ? (
         <ScraperStatus variant="bar" />
       ) : (
-        <ScraperStatus variant="bar" alwaysAlive="Manual: links open hapag-lloyd.com, nothing to check" />
+        <ScraperStatus variant="bar" alwaysAlive={`Manual: links open ${MANUAL_SITES[carrier]}, nothing to check`} />
       )}
       <h2 id={titleId} className={styles.title}>
         <img
@@ -103,7 +100,11 @@ export function CarrierCard({ carrier }: { carrier: Carrier }) {
             <Hand size={18} aria-hidden="true" className={styles.icon} />
             <span>
               Manual
-              <span className={styles.next}>Get Links on Check ship schedule, then paste the sailings</span>
+              <span className={styles.next}>
+                {carrier === 'cma'
+                  ? 'Get Links on Check ship schedule, run the Fill CMA search bookmark, then paste the sailings'
+                  : 'Get Links on Check ship schedule, then paste the sailings'}
+              </span>
             </span>
           </p>
         )}

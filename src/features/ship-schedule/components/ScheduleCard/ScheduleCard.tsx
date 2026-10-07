@@ -11,23 +11,17 @@ import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifi
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CircleAlert, CircleCheck, LoaderCircle, RotateCcw } from 'lucide-react'
 import { useEffect, useId, useState, type ReactNode } from 'react'
-import hplLogo from '@/shared/assets/hpl-logo.svg'
-import oneLogo from '@/shared/assets/one-logo.svg'
 import { ConfirmDialog } from '@/shared/components'
+import { BRANDS } from '../../data/brands'
 import { findService, isDefaultRoute, SERVICES, type Carrier } from '../../data/services'
 import { useScheduleSelection } from '../../hooks/useScheduleSelection'
-import { getSchedule, hplSearchLinks, type HplSearchLink } from '../../services/getSchedule'
+import { getSchedule, searchLinks, type SearchLink } from '../../services/getSchedule'
 import type { ScheduleFile } from '../../types'
+import { CmaLinks } from '../CmaLinks/CmaLinks'
 import { HplLinks } from '../HplLinks/HplLinks'
 import { RouteCard } from '../RouteCard/RouteCard'
 import { ServicePicker } from '../ServicePicker/ServicePicker'
 import styles from './ScheduleCard.module.scss'
-
-// Logos kept in the repo: ONE's from one-line.com, Hapag-Lloyd's from hapag-lloyd.com's header
-const BRANDS: Record<Carrier, { name: string; logo: string; width: number; height: number }> = {
-  one: { name: 'ONE', logo: oneLogo, width: 90, height: 40 },
-  hpl: { name: 'Hapag-Lloyd', logo: hplLogo, width: 130, height: 20 },
-}
 
 type ScheduleCardProps = {
   carrier: Carrier
@@ -89,9 +83,9 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
   const [saveFailed, setSaveFailed] = useState(false)
   const [confirmingCancel, setConfirmingCancel] = useState(false)
   // Hapag-Lloyd search links, kept with the services and date they were made for, so they hide once those change
-  const [hplLinks, setHplLinks] = useState<{ key: string; links: HplSearchLink[] }>()
+  const [searchLinksFor, setSearchLinks] = useState<{ key: string; links: SearchLink[] }>()
   const linksKey = JSON.stringify({ startDate, services })
-  const links = hplLinks?.key === linksKey ? hplLinks.links : undefined
+  const links = searchLinksFor?.key === linksKey ? searchLinksFor.links : undefined
   const titleId = useId()
   const brand = BRANDS[carrier]
 
@@ -104,9 +98,10 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
 
   const handleGetSchedule = async () => {
     if (!canSubmit || request.status === 'loading') return
-    if (carrier === 'hpl') {
+    // Hapag-Lloyd and CMA CGM: links to search on their sites, one per POL → POD
+    if (carrier !== 'one') {
       try {
-        setHplLinks({ key: linksKey, links: hplSearchLinks({ startDate, weeks, services }) })
+        setSearchLinks({ key: linksKey, links: searchLinks(carrier, { startDate, weeks, services }) })
         setRequest({ status: 'idle' })
       } catch (error) {
         setRequest({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong.' })
@@ -197,7 +192,17 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
             </DndContext>
           )}
 
-          {links && links.length > 0 && (
+          {links && links.length > 0 && carrier === 'cma' && (
+            <CmaLinks
+              key={linksKey}
+              links={links}
+              services={services}
+              startDate={startDate}
+              onFile={onFile}
+              onDiscard={() => setSearchLinks(undefined)}
+            />
+          )}
+          {links && links.length > 0 && carrier === 'hpl' && (
             // Keyed by the services and date, so pasted sailings start over when the links change
             <HplLinks
               key={linksKey}
@@ -206,7 +211,7 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
               startDate={startDate}
               weeks={weeks}
               onFile={onFile}
-              onDiscard={() => setHplLinks(undefined)}
+              onDiscard={() => setSearchLinks(undefined)}
             />
           )}
         </div>
@@ -239,7 +244,7 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
             disabled={!canSubmit || request.status === 'loading'}
             aria-busy={request.status === 'loading'}
           >
-            {request.status === 'loading' ? <LoadingLabel /> : carrier === 'hpl' ? 'Get Links' : 'Get Schedule'}
+            {request.status === 'loading' ? <LoadingLabel /> : carrier === 'one' ? 'Get Schedule' : 'Get Links'}
           </button>
         </footer>
       </section>

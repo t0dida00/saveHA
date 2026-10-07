@@ -7,6 +7,7 @@ import type { PortSide, ServiceRoute } from '../types'
 const STORAGE_KEYS: Record<Carrier, string> = {
   one: 'saveha.shipSchedule.selection',
   hpl: 'saveha.shipSchedule.hpl.selection',
+  cma: 'saveha.shipSchedule.cma.selection',
 }
 
 export const WEEK_OPTIONS = [2, 4, 6, 8]

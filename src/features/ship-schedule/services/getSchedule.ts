@@ -1,4 +1,5 @@
-import { SERVICES, toWebsiteCode } from '../data/services'
+import { findService, SERVICES, toWebsiteCode } from '../data/services'
+import { cmaSearchHash, type CmaRoute } from '../utils/cmaBookmarklet'
 import type { ScheduleFile, ScheduleSelection } from '../types'
 import { readCachedLatest, storeCachedLatest } from './latestScheduleCache'
 
@@ -76,10 +77,10 @@ export async function getSchedule(selection: ScheduleSelection): Promise<Schedul
   }
 }
 
-const HPL_SCHEDULE_URL = 'https://www.hapag-lloyd.com/solutions/schedule/#/'
-
-/** A Hapag-Lloyd schedule search (POL → POD) and the services that use it */
-export type HplSearchLink = {
+/** A carrier's schedule search for one POL → POD, and the services that use it */
+export type SearchLink = {
+  /** POL-POD website codes, e.g. VNVUT-USNYC: one link per pair */
+  key: string
   codes: string[]
   /** Ports as the card names them, e.g. HPL_VUT and NYC */
   origin: string
@@ -90,26 +91,53 @@ export type HplSearchLink = {
   url: string
 }
 
+type LinkCarrier = 'hpl' | 'cma'
+
+/** A service's code as cma-cgm.com writes it, e.g. PEARLAS1 for PEARL */
+export const cmaSiteCode = (code: string) => findService('cma', code)?.siteCode ?? code
+
 /**
- * Hapag-Lloyd's site blocks automated browsers, so its schedules aren't fetched: each service gets a
- * link to the search on hapag-lloyd.com for its first origin → first destination, from the start date.
- * Services with the same POL and POD share one link, in the order the card lists them.
+ * CMA CGM's routing finder with routes for the Fill CMA search bookmark to search, one after another.
+ * The routes name their services by CMA's own codes, the ones its Routing solutions filter shows.
  */
-export function hplSearchLinks(selection: ScheduleSelection): HplSearchLink[] {
-  const links = new Map<string, HplSearchLink>()
+export const cmaSearchUrl = (routes: CmaRoute[], date: string) =>
+  `https://www.cma-cgm.com/ebusiness/schedules${cmaSearchHash(
+    routes.map((route) => ({ ...route, codes: route.codes.map(cmaSiteCode) })),
+    date,
+  )}`
+
+// Each carrier's search page for a POL → POD from a date
+const SEARCH_URLS: Record<LinkCarrier, (from: string, to: string, date: string, weeks: number) => string> = {
+  hpl: (from, to, date) =>
+    'https://www.hapag-lloyd.com/solutions/schedule/#/?' +
+    `sl=${from}&el=${to}&exportHaulage=MH&importHaulage=MH&containerType=45GP` +
+    `&departureDate=${date}&usFlag=false&dg=false&reefer`,
+  // The routing finder searches by form, not URL: the hash carries the route for the Fill CMA search bookmark
+  cma: (from, to, date) => cmaSearchUrl([{ from, to, codes: [] }], date),
+}
+
+/**
+ * Hapag-Lloyd's and CMA CGM's sites block automated browsers, so their schedules aren't fetched: each
+ * service gets a link to the carrier's search for its first origin → first destination, from the start
+ * date. Services with the same POL and POD share one link, in the order the card lists them.
+ */
+export function searchLinks(carrier: LinkCarrier, selection: ScheduleSelection): SearchLink[] {
+  const links = new Map<string, SearchLink>()
   for (const route of selection.services) {
     const [origin, destination] = [route.origins[0], route.destinations[0]]
     const from = toWebsiteCode(origin)
     const to = toWebsiteCode(destination)
     if (!from || !to) throw new MissingWebsiteCodeError(route.code, from ? destination : origin)
-    const query =
-      `sl=${from}&el=${to}&exportHaulage=MH&importHaulage=MH&containerType=45GP` +
-      `&departureDate=${selection.startDate}&usFlag=false&dg=false&reefer`
-    const url = `${HPL_SCHEDULE_URL}?${query}`
-    const link = links.get(url)
+    const key = `${from}-${to}`
+    const link = links.get(key)
     if (link) link.codes.push(route.code)
-    else links.set(url, { codes: [route.code], origin, destination, from, to, url })
+    else {
+      const url = SEARCH_URLS[carrier](from, to, selection.startDate, selection.weeks)
+      links.set(key, { key, codes: [route.code], origin, destination, from, to, url })
+    }
   }
+  // CMA CGM's link names its services, so the fill bookmark can say which search it's on
+  if (carrier === 'cma') for (const link of links.values()) link.url = cmaSearchUrl([link], selection.startDate)
   return [...links.values()]
 }
 
