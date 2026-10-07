@@ -1,0 +1,14 @@
+@use '@/styles/tokens' as *;
+
+// Output sample on the left, inputs on the right; stacked on narrower screens
+.sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: $space-5;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 44rem;
+  }
+}
