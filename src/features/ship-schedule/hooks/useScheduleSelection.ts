@@ -101,15 +101,6 @@ export function useScheduleSelection(carrier: Carrier) {
     })
   }, [])
 
-  const resetAllRoutes = useCallback(() => {
-    setServices((current) =>
-      current.map((route) => {
-        const service = findService(carrier, route.code)
-        return service ? defaultRoute(service) : route
-      }),
-    )
-  }, [carrier])
-
   const togglePort = useCallback((code: string, side: PortSide, port: string) => {
     setServices((current) =>
       current.map((route) => {
@@ -133,7 +124,6 @@ export function useScheduleSelection(carrier: Carrier) {
     toggleService,
     toggleAllServices,
     togglePort,
-    resetAllRoutes,
     moveService,
     cancelChanges,
   }

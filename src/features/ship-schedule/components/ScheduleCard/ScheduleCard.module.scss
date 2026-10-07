@@ -16,40 +16,11 @@
 
 .sectionHead {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: $space-3;
   margin-bottom: $space-4;
-}
-
-.resetAll {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-1;
-  flex: none;
-  height: 36px;
-  padding: 0 $space-3;
-  border: 0;
-  border-radius: $radius-sm;
-  background: transparent;
-  color: var(--color-muted);
-  font-size: 0.9375rem;
-  font-weight: $weight-semibold;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: var(--color-hover);
-    color: var(--color-text);
-  }
-
-  &:focus-visible {
-    @include focus-ring;
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
 }
 
 // Title with the scraper status under it

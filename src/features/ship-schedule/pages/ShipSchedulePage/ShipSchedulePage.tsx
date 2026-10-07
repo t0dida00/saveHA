@@ -100,10 +100,11 @@ export function ShipSchedulePage() {
       <div className={styles.columns}>
         <div className={styles.main}>
           <ScheduleCard carrier="one" startDate={startDate} weeks={weeks} status={<ScraperStatus />} onFile={addFile} />
-          <ScheduleCard carrier="hpl" startDate={startDate} weeks={weeks} onFile={addFile} />
           <ScheduleCard carrier="cma" startDate={startDate} weeks={weeks} onFile={addFile} />
+          <ScheduleCard carrier="hpl" startDate={startDate} weeks={weeks} onFile={addFile} />
         </div>
 
+        {/* Results under the carriers, full width */}
         <RecentFiles files={files} onRemove={removeFile} onUpdate={handleUpdate} update={update} lastUpdate={lastUpdate} />
       </div>
     </>

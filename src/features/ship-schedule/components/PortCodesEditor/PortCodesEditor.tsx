@@ -1,6 +1,6 @@
-import { CircleAlert, CircleCheck, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { CircleAlert, CircleCheck, Plus, Trash2 } from 'lucide-react'
 import { useId, useMemo, useState } from 'react'
-import { DEFAULT_PORT_CODES, setPortCodes, usePortCodes, type PortCode } from '../../data/portCodesStore'
+import { setPortCodes, usePortCodes, type PortCode } from '../../data/portCodesStore'
 import { ALL_PORTS } from '../../data/services'
 import styles from './PortCodesEditor.module.scss'
 
@@ -26,7 +26,6 @@ export function PortCodesEditor() {
 
   const draft = toList(rows)
   const isDirty = !sameList(draft, saved)
-  const isDefault = sameList(draft, DEFAULT_PORT_CODES)
 
   // Per-row problems: empty fields and repeated codes
   const errors = useMemo(() => {
@@ -77,11 +76,6 @@ export function PortCodesEditor() {
     setStatus('idle')
   }
 
-  const handleReset = () => {
-    setRows(toRows(DEFAULT_PORT_CODES))
-    setStatus('idle')
-  }
-
   return (
     <section className={styles.section} aria-labelledby={titleId}>
       <div className={styles.body}>
@@ -96,16 +90,6 @@ export function PortCodesEditor() {
               ticked Origin are listed under Origin on each service; all others under Destination.
             </p>
           </div>
-          <button
-            type="button"
-            className={styles.textButton}
-            onClick={handleReset}
-            disabled={isDefault}
-            title="Put back the original list of codes"
-          >
-            <RotateCcw size={16} aria-hidden="true" />
-            Reset to default
-          </button>
         </div>
 
         <div className={styles.table}>

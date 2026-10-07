@@ -9,11 +9,11 @@ import {
 } from '@dnd-kit/core'
 import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CircleAlert, CircleCheck, LoaderCircle, RotateCcw } from 'lucide-react'
+import { CircleAlert, CircleCheck, LoaderCircle } from 'lucide-react'
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import { ConfirmDialog } from '@/shared/components'
 import { BRANDS } from '../../data/brands'
-import { findService, isDefaultRoute, SERVICES, type Carrier } from '../../data/services'
+import { findService, SERVICES, type Carrier } from '../../data/services'
 import { useScheduleSelection } from '../../hooks/useScheduleSelection'
 import { getSchedule, searchLinks, type SearchLink } from '../../services/getSchedule'
 import type { ScheduleFile } from '../../types'
@@ -67,7 +67,6 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
     toggleService,
     toggleAllServices,
     togglePort,
-    resetAllRoutes,
     moveService,
     cancelChanges,
   } = useScheduleSelection(carrier)
@@ -88,8 +87,6 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
   const links = searchLinksFor?.key === linksKey ? searchLinksFor.links : undefined
   const titleId = useId()
   const brand = BRANDS[carrier]
-
-  const allDefault = services.every((route) => isDefaultRoute(carrier, route))
 
   const canSubmit =
     Boolean(startDate) &&
@@ -145,16 +142,6 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
               </h2>
               {status}
             </div>
-            <button
-              type="button"
-              className={styles.resetAll}
-              onClick={resetAllRoutes}
-              disabled={allDefault}
-              title="Set every selected service back to its default ports"
-            >
-              <RotateCcw size={16} aria-hidden="true" />
-              Reset to default
-            </button>
           </div>
           <ServicePicker
             services={SERVICES[carrier]}

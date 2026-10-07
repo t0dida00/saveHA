@@ -63,14 +63,6 @@ export function formatRoute({ origins, destinations }: Pick<Service, 'origins' |
   return `${origins.join('/') || '—'} → ${destinations.join('/') || '—'}`
 }
 
-// True when the route has exactly the service's own ports, in any order
-export function isDefaultRoute(carrier: Carrier, route: Pick<Service, 'code' | 'origins' | 'destinations'>) {
-  const service = findService(carrier, route.code)
-  if (!service) return true
-  const same = (a: string[], b: string[]) => a.length === b.length && a.every((port) => b.includes(port))
-  return same(route.origins, service.origins) && same(route.destinations, service.destinations)
-}
-
 // Every port any carrier's services use by default, for Settings to flag ports that have no website code
 export const ALL_PORTS = [
   ...new Set(Object.values(SERVICES).flatMap((list) => list.flatMap((service) => [...service.origins, ...service.destinations]))),
