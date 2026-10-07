@@ -1,13 +1,14 @@
 import { PageHeader } from '@/shared/components'
-import { OneCard } from '../../components/OneCard/OneCard'
+import { CarrierCard } from '../../components/CarrierCard/CarrierCard'
 import styles from './DashboardPage.module.scss'
 
 export function DashboardPage() {
   return (
     <>
-      <PageHeader title="Dashboard" description="The weekly schedule job at a glance." />
+      <PageHeader title="Dashboard" description="Each carrier's schedule at a glance." />
       <div className={styles.cards}>
-        <OneCard />
+        <CarrierCard carrier="one" />
+        <CarrierCard carrier="hpl" />
       </div>
     </>
   )

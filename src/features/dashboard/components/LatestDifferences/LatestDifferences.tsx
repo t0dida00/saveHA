@@ -1,14 +1,18 @@
 import { GitCompare } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { compareCsv, CsvCompare, useRecentFiles } from '@/features/ship-schedule'
-import styles from '../OneCard/OneCard.module.scss'
+import { compareCsv, CsvCompare, type ScheduleFile } from '@/features/ship-schedule'
+import styles from '../CarrierCard/CarrierCard.module.scss'
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`
 
-/** What changed between the 2 newest files in Results, with the full comparison a click away */
-export function LatestDifferences() {
-  // Newest first, read from this browser like the Results list
-  const { files } = useRecentFiles()
+type LatestDifferencesProps = {
+  /** One carrier's files in Results, newest first, so ONE is never compared with Hapag-Lloyd */
+  files: ScheduleFile[]
+  carrierName: string
+}
+
+/** What changed between a carrier's 2 newest files, with the full comparison a click away */
+export function LatestDifferences({ files, carrierName }: LatestDifferencesProps) {
   const [comparing, setComparing] = useState(false)
 
   // The older one is the baseline, as in Results' Compare
@@ -16,7 +20,7 @@ export function LatestDifferences() {
   const diff = useMemo(() => (before && after ? compareCsv(before.content, after.content) : undefined), [before, after])
 
   if (!before || !after || !diff) {
-    return <p className={styles.muted}>Shown once Results has 2 files.</p>
+    return <p className={styles.muted}>Shown once Results has 2 {carrierName} files.</p>
   }
 
   const weeks = diff.rows.filter((row) => row.kind !== 'same').length

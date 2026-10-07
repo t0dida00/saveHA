@@ -1,9 +1,11 @@
 import { CircleAlert, CircleCheck, Download, Eye, FileText, GitCompare, Info, RefreshCw, Trash2 } from 'lucide-react'
 import { useId, useState } from 'react'
 import { ConfirmDialog } from '@/shared/components'
+import type { Carrier } from '../../data/services'
 import { MAX_FILES } from '../../hooks/useRecentFiles'
 import type { ScheduleFile } from '../../types'
 import { downloadFile } from '../../utils/downloadFile'
+import { fileCarrier } from '../../utils/fileCarrier'
 import { formatQueryDate, formatReceived } from '../../utils/formatDate'
 import { CsvCompare } from '../CsvCompare/CsvCompare'
 import { CsvPreview } from '../CsvPreview/CsvPreview'
@@ -25,6 +27,11 @@ type RecentFilesProps = {
   lastUpdate?: string
 }
 
+const CARRIERS: { carrier: Carrier; name: string }[] = [
+  { carrier: 'one', name: 'ONE' },
+  { carrier: 'hpl', name: 'Hapag-Lloyd' },
+]
+
 function formatSize(text: string) {
   const bytes = new Blob([text]).size
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`
@@ -40,14 +47,14 @@ function formatQuery(file: ScheduleFile) {
 type FileItemProps = {
   file: ScheduleFile
   selected: boolean
-  /** True when two other files are already ticked */
-  selectDisabled: boolean
+  /** Why the checkbox is off: two others are ticked, or a file of the other carrier is */
+  selectDisabledReason?: string
   onSelect: () => void
   onPreview: () => void
   onRemove: () => void
 }
 
-function FileItem({ file, selected, selectDisabled, onSelect, onPreview, onRemove }: FileItemProps) {
+function FileItem({ file, selected, selectDisabledReason, onSelect, onPreview, onRemove }: FileItemProps) {
   const [showInfo, setShowInfo] = useState(false)
   const infoId = useId()
 
@@ -57,10 +64,10 @@ function FileItem({ file, selected, selectDisabled, onSelect, onPreview, onRemov
         type="checkbox"
         className={styles.select}
         checked={selected}
-        disabled={selectDisabled}
+        disabled={Boolean(selectDisabledReason)}
         onChange={onSelect}
         aria-label={`Select ${file.name} to compare`}
-        title={selectDisabled ? 'Two files are already selected' : 'Select to compare'}
+        title={selectDisabledReason ?? 'Select to compare'}
       />
       <FileText size={20} aria-hidden="true" className={styles.icon} />
       <div className={styles.info}>
@@ -135,6 +142,9 @@ export function RecentFiles({ files, onRemove, onUpdate, update, lastUpdate }: R
   // Older file first: it is the baseline the newer one is compared against
   const [before, after] = [...selectedFiles].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
+  // Files are only compared within one carrier: once one is ticked, the other carrier's can't be
+  const selectedCarrier = selectedFiles[0] && fileCarrier(selectedFiles[0])
+
   // At most 2: other checkboxes are disabled once two are ticked
   const toggleSelected = (id: string) => {
     const current = selectedFiles.map((file) => file.id)
@@ -193,7 +203,7 @@ export function RecentFiles({ files, onRemove, onUpdate, update, lastUpdate }: R
       {files.length > 1 && (
         <div className={styles.compareBar}>
           <p className={styles.compareHint}>
-            {selectedFiles.length === 2 ? 'Ready to compare' : 'Tick 2 files to compare'}
+            {selectedFiles.length === 2 ? 'Ready to compare' : 'Tick 2 files of one carrier to compare'}
           </p>
           {selectedFiles.length > 0 && (
             <button type="button" className={styles.textButton} onClick={() => setSelectedIds([])}>
@@ -212,23 +222,48 @@ export function RecentFiles({ files, onRemove, onUpdate, update, lastUpdate }: R
         </div>
       )}
 
-      {files.length === 0 ? (
-        <p className={styles.empty}>Files from Get Schedule and Update show up here. The {MAX_FILES} most recent are kept.</p>
-      ) : (
-        <ul className={styles.list}>
-          {files.map((file) => (
-            <FileItem
-              key={file.id}
-              file={file}
-              selected={selectedFiles.includes(file)}
-              selectDisabled={selectedFiles.length >= 2 && !selectedFiles.includes(file)}
-              onSelect={() => toggleSelected(file.id)}
-              onPreview={() => setPreviewId(file.id)}
-              onRemove={() => setDeleteId(file.id)}
-            />
-          ))}
-        </ul>
-      )}
+      {CARRIERS.map(({ carrier, name }) => {
+        const carrierFiles = files.filter((file) => fileCarrier(file) === carrier)
+        const otherCarrierTicked = selectedCarrier !== undefined && selectedCarrier !== carrier
+        return (
+          <section key={carrier} aria-label={`${name} files`}>
+            <h3 className={styles.groupTitle}>
+              {name}
+              <span className={styles.groupCount}>{carrierFiles.length}</span>
+            </h3>
+            {carrierFiles.length === 0 ? (
+              <p className={styles.empty}>
+                {carrier === 'one'
+                  ? 'Files from Get Schedule and Update show up here.'
+                  : 'Files from Get Links → Add to Results show up here.'}{' '}
+                The {MAX_FILES} most recent are kept.
+              </p>
+            ) : (
+              <ul className={styles.list}>
+                {carrierFiles.map((file) => (
+                  <FileItem
+                    key={file.id}
+                    file={file}
+                    selected={selectedFiles.includes(file)}
+                    selectDisabledReason={
+                      selectedFiles.includes(file)
+                        ? undefined
+                        : otherCarrierTicked
+                          ? 'Compare files from the same carrier'
+                          : selectedFiles.length >= 2
+                            ? 'Two files are already selected'
+                            : undefined
+                    }
+                    onSelect={() => toggleSelected(file.id)}
+                    onPreview={() => setPreviewId(file.id)}
+                    onRemove={() => setDeleteId(file.id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </section>
+        )
+      })}
 
       {previewFile && <CsvPreview file={previewFile} onClose={() => setPreviewId(undefined)} />}
       {comparing && before && after && <CsvCompare before={before} after={after} onClose={() => setComparing(false)} />}

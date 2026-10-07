@@ -26,6 +26,11 @@
   display: block;
   height: 32px;
   width: auto;
+
+  // A wide wordmark: shorter so it takes about as much room as ONE's
+  &[data-carrier='hpl'] {
+    height: 22px;
+  }
 }
 
 .block {

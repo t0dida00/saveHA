@@ -59,9 +59,6 @@ export const ALL_PORTS = [
   ...new Set(Object.values(SERVICES).flatMap((list) => list.flatMap((service) => [...service.origins, ...service.destinations]))),
 ]
 
-/** VUT for HPL_VUT: the plain port, as written in a file's column headers */
-export const plainPort = (port: string) => port.replace(/^[A-Z]+_/, '')
-
 // Ports a card offers on one row, in Settings order: codes ticked "Origin" go on the Origin row, all others on
 // the Destination row. Every card lists every port, carrier rows like HPL_VUT included.
 // Ports the route already has stay listed even if Settings moved or removed them.

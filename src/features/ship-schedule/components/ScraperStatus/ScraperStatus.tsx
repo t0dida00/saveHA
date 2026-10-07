@@ -19,19 +19,26 @@ type ScraperStatusProps = {
    * The details show in a tooltip on hover or focus.
    */
   variant?: 'full' | 'bar'
+  /**
+   * For a carrier with no scraper to check (Hapag-Lloyd is copied by hand): always green "Alive",
+   * with this text in place of the last check. Nothing is asked of the server.
+   */
+  alwaysAlive?: string
 }
 
 /** Green "Alive" when the server's last scraper check passed, red "Error" otherwise, with when it ran */
-export function ScraperStatus({ variant = 'full' }: ScraperStatusProps) {
+export function ScraperStatus({ variant = 'full', alwaysAlive }: ScraperStatusProps) {
   const tooltipId = useId()
   // An answer fetched within the last day shows straight away
-  const [status, setStatus] = useState<Status>(() => {
+  const [fetched, setStatus] = useState<Status>(() => {
     const cached = readCachedScraperHealth()
     return cached ? toStatus(cached) : { state: 'checking' }
   })
+  const status: Status = alwaysAlive ? { state: 'alive', checkedAt: '' } : fetched
 
   // With a fresh cache this resolves from it without a request
   useEffect(() => {
+    if (alwaysAlive) return
     let cancelled = false
     getScraperHealth()
       .then((health) => {
@@ -43,11 +50,11 @@ export function ScraperStatus({ variant = 'full' }: ScraperStatusProps) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [alwaysAlive])
 
   const label = status.state === 'checking' ? 'Checking…' : status.state === 'alive' ? 'Alive' : 'Error'
   const checkedAt = status.state === 'checking' ? undefined : status.checkedAt
-  const reason = status.state === 'error' ? status.reason : undefined
+  const reason = status.state === 'error' ? status.reason : alwaysAlive
 
   if (variant === 'bar') {
     const detail = checkedAt ? `Last check: ${formatReceived(checkedAt)}` : (reason ?? 'Checking the scraper…')

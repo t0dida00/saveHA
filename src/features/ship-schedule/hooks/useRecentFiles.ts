@@ -1,17 +1,23 @@
 import { useSyncExternalStore } from 'react'
 import type { ScheduleFile } from '../types'
+import { fileCarrier } from '../utils/fileCarrier'
 
 const STORAGE_KEY = 'saveha.shipSchedule.files'
+/** Kept per carrier, so one carrier's files never push out the other's */
 export const MAX_FILES = 10
 
+// Newest first, at most MAX_FILES of each carrier
 function newestFirst(files: ScheduleFile[]) {
-  return [...files].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  const counts = { one: 0, hpl: 0 }
+  return [...files]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .filter((file) => ++counts[fileCarrier(file)] <= MAX_FILES)
 }
 
 function loadFiles(): ScheduleFile[] {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '[]')
-    return Array.isArray(stored) ? newestFirst(stored).slice(0, MAX_FILES) : []
+    return Array.isArray(stored) ? newestFirst(stored) : []
   } catch {
     return []
   }
@@ -58,14 +64,14 @@ function subscribe(listener: () => void) {
 }
 
 function addFile(file: ScheduleFile) {
-  setFiles(newestFirst([file, ...current]).slice(0, MAX_FILES))
+  setFiles(newestFirst([file, ...current]))
 }
 
 function removeFile(id: string) {
   setFiles(current.filter((file) => file.id !== id))
 }
 
-/** The last MAX_FILES CSV files returned by the schedule API, newest first, kept in this browser */
+/** The last MAX_FILES schedule CSVs of each carrier, newest first, kept in this browser */
 export function useRecentFiles() {
   const files = useSyncExternalStore(subscribe, getFiles)
   return { files, addFile, removeFile }

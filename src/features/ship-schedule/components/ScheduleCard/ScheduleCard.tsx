@@ -13,10 +13,12 @@ import { CircleAlert, CircleCheck, LoaderCircle, RotateCcw } from 'lucide-react'
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import hplLogo from '@/shared/assets/hpl-logo.svg'
 import oneLogo from '@/shared/assets/one-logo.svg'
+import { ConfirmDialog } from '@/shared/components'
 import { findService, isDefaultRoute, SERVICES, type Carrier } from '../../data/services'
 import { useScheduleSelection } from '../../hooks/useScheduleSelection'
-import { getSchedule } from '../../services/getSchedule'
+import { getSchedule, hplSearchLinks, type HplSearchLink } from '../../services/getSchedule'
 import type { ScheduleFile } from '../../types'
+import { HplLinks } from '../HplLinks/HplLinks'
 import { RouteCard } from '../RouteCard/RouteCard'
 import { ServicePicker } from '../ServicePicker/ServicePicker'
 import styles from './ScheduleCard.module.scss'
@@ -34,7 +36,7 @@ type ScheduleCardProps = {
   weeks: number
   /** Shown under the logo, e.g. the scraper status */
   status?: ReactNode
-  /** A file the API returned, for Results */
+  /** A file the API returned, for Results (ONE only; Hapag-Lloyd gives search links instead) */
   onFile: (file: ScheduleFile) => void
 }
 
@@ -85,6 +87,11 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
   }
   const [request, setRequest] = useState<RequestState>({ status: 'idle' })
   const [saveFailed, setSaveFailed] = useState(false)
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  // Hapag-Lloyd search links, kept with the services and date they were made for, so they hide once those change
+  const [hplLinks, setHplLinks] = useState<{ key: string; links: HplSearchLink[] }>()
+  const linksKey = JSON.stringify({ startDate, services })
+  const links = hplLinks?.key === linksKey ? hplLinks.links : undefined
   const titleId = useId()
   const brand = BRANDS[carrier]
 
@@ -97,9 +104,18 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
 
   const handleGetSchedule = async () => {
     if (!canSubmit || request.status === 'loading') return
+    if (carrier === 'hpl') {
+      try {
+        setHplLinks({ key: linksKey, links: hplSearchLinks({ startDate, weeks, services }) })
+        setRequest({ status: 'idle' })
+      } catch (error) {
+        setRequest({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong.' })
+      }
+      return
+    }
     setRequest({ status: 'loading' })
     try {
-      const file = await getSchedule(carrier, { startDate, weeks, services })
+      const file = await getSchedule({ startDate, weeks, services })
       onFile(file)
       setRequest({ status: 'success', fileName: file.name })
     } catch (error) {
@@ -109,9 +125,11 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
 
   const handleSave = () => setSaveFailed(!save())
 
-  const handleCancel = () => {
+  // Cancel asks first: it throws away every unsaved change to the services and ports
+  const handleDiscard = () => {
     cancelChanges()
     setSaveFailed(false)
+    setConfirmingCancel(false)
   }
 
   return (
@@ -178,6 +196,19 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
               </SortableContext>
             </DndContext>
           )}
+
+          {links && links.length > 0 && (
+            // Keyed by the services and date, so pasted sailings start over when the links change
+            <HplLinks
+              key={linksKey}
+              links={links}
+              services={services}
+              startDate={startDate}
+              weeks={weeks}
+              onFile={onFile}
+              onDiscard={() => setHplLinks(undefined)}
+            />
+          )}
         </div>
 
         <footer className={styles.footer}>
@@ -195,7 +226,7 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
               </>
             )}
           </p>
-          <button type="button" className={styles.secondary} onClick={handleCancel} disabled={!isDirty}>
+          <button type="button" className={styles.secondary} onClick={() => setConfirmingCancel(true)} disabled={!isDirty}>
             Cancel
           </button>
           <button type="button" className={styles.secondary} onClick={handleSave} disabled={!isDirty}>
@@ -208,7 +239,7 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
             disabled={!canSubmit || request.status === 'loading'}
             aria-busy={request.status === 'loading'}
           >
-            {request.status === 'loading' ? <LoadingLabel /> : 'Get Schedule'}
+            {request.status === 'loading' ? <LoadingLabel /> : carrier === 'hpl' ? 'Get Links' : 'Get Schedule'}
           </button>
         </footer>
       </section>
@@ -227,6 +258,17 @@ export function ScheduleCard({ carrier, startDate, weeks, status, onFile }: Sche
           </p>
         )}
       </div>
+
+      {confirmingCancel && (
+        <ConfirmDialog
+          title="Discard unsaved changes?"
+          confirmLabel="Discard"
+          onConfirm={handleDiscard}
+          onCancel={() => setConfirmingCancel(false)}
+        >
+          {brand.name}'s services and ports go back to what you last saved.
+        </ConfirmDialog>
+      )}
     </div>
   )
 }

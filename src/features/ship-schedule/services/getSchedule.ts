@@ -1,6 +1,5 @@
-import { SERVICES, toWebsiteCode, type Carrier } from '../data/services'
+import { SERVICES, toWebsiteCode } from '../data/services'
 import type { ScheduleFile, ScheduleSelection } from '../types'
-import { mergeHplSchedules, type HplRouteSchedule } from '../utils/mergeHplSchedules'
 import { readCachedLatest, storeCachedLatest } from './latestScheduleCache'
 
 export class ScheduleApiNotConfiguredError extends Error {
@@ -54,11 +53,7 @@ function newFileId(createdAt: Date) {
 }
 
 // The API answers with a CSV file (text/csv, named by Content-Disposition)
-export function getSchedule(carrier: Carrier, selection: ScheduleSelection): Promise<ScheduleFile> {
-  return carrier === 'hpl' ? getHplSchedule(selection) : getOneSchedule(selection)
-}
-
-async function getOneSchedule(selection: ScheduleSelection): Promise<ScheduleFile> {
+export async function getSchedule(selection: ScheduleSelection): Promise<ScheduleFile> {
   if (!__HOST_URL__) throw new ScheduleApiNotConfiguredError()
 
   const request = toScheduleRequest(selection)
@@ -81,59 +76,41 @@ async function getOneSchedule(selection: ScheduleSelection): Promise<ScheduleFil
   }
 }
 
-/** POST /schedules/hpl/weekly body: one port pair, by UN/LOCODE */
-type HplScheduleRequest = { date: string; next: number; from: string; to: string }
+const HPL_SCHEDULE_URL = 'https://www.hapag-lloyd.com/solutions/schedule/#/'
 
-async function fetchHplRoute(request: HplScheduleRequest) {
-  const response = await fetch(`${__HOST_URL__}/schedules/hpl/weekly`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request),
-  })
-  if (response.status === 503) throw new Error("Hapag-Lloyd isn't set up on the schedule API yet (its HLAG_* settings).")
-  if (!response.ok) throw new Error(`Schedule API returned ${response.status} ${response.statusText}`)
-  return { fileName: fileNameFrom(response.headers.get('Content-Disposition')), csv: await response.text() }
+/** A Hapag-Lloyd schedule search (POL → POD) and the services that use it */
+export type HplSearchLink = {
+  codes: string[]
+  /** Ports as the card names them, e.g. HPL_VUT and NYC */
+  origin: string
+  destination: string
+  /** Their website codes, e.g. VNVUT and USNYC: what a pasted result names */
+  from: string
+  to: string
+  url: string
 }
 
 /**
- * Hapag-Lloyd answers per port pair with every service on it, so each distinct route
- * (first origin → first destination) is asked once and the answers are merged into one file
- * with only the chosen services, in the order the card lists them.
+ * Hapag-Lloyd's site blocks automated browsers, so its schedules aren't fetched: each service gets a
+ * link to the search on hapag-lloyd.com for its first origin → first destination, from the start date.
+ * Services with the same POL and POD share one link, in the order the card lists them.
  */
-async function getHplSchedule(selection: ScheduleSelection): Promise<ScheduleFile> {
-  if (!__HOST_URL__) throw new ScheduleApiNotConfiguredError()
-
-  const routes = selection.services.map((route) => {
+export function hplSearchLinks(selection: ScheduleSelection): HplSearchLink[] {
+  const links = new Map<string, HplSearchLink>()
+  for (const route of selection.services) {
     const [origin, destination] = [route.origins[0], route.destinations[0]]
     const from = toWebsiteCode(origin)
     const to = toWebsiteCode(destination)
     if (!from || !to) throw new MissingWebsiteCodeError(route.code, from ? destination : origin)
-    return { code: route.code, origins: route.origins, destinations: route.destinations, from, to }
-  })
-
-  // One route at a time, to go easy on Hapag-Lloyd
-  const answers = new Map<string, Awaited<ReturnType<typeof fetchHplRoute>>>()
-  for (const { from, to } of routes) {
-    const pair = `${from}-${to}`
-    if (!answers.has(pair)) {
-      answers.set(pair, await fetchHplRoute({ date: selection.startDate, next: selection.weeks, from, to }))
-    }
+    const query =
+      `sl=${from}&el=${to}&exportHaulage=MH&importHaulage=MH&containerType=45GP` +
+      `&departureDate=${selection.startDate}&usFlag=false&dg=false&reefer`
+    const url = `${HPL_SCHEDULE_URL}?${query}`
+    const link = links.get(url)
+    if (link) link.codes.push(route.code)
+    else links.set(url, { codes: [route.code], origin, destination, from, to, url })
   }
-
-  const schedules: HplRouteSchedule[] = routes.map((route) => ({
-    ...route,
-    csv: answers.get(`${route.from}-${route.to}`)?.csv ?? '',
-  }))
-  const createdAt = new Date()
-  return {
-    id: newFileId(createdAt),
-    name: answers.values().next().value?.fileName ?? `HPL-${selection.startDate}.csv`,
-    createdAt: createdAt.toISOString(),
-    date: selection.startDate,
-    weeks: selection.weeks,
-    services: routes.map((route) => route.code),
-    content: mergeHplSchedules(schedules),
-  }
+  return [...links.values()]
 }
 
 export class NoLatestScheduleError extends Error {

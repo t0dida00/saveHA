@@ -1,0 +1,213 @@
+@use '@/styles/tokens' as *;
+
+// Hapag-Lloyd: one search link per POL → POD, under the services, with the paste-back step
+.root {
+  margin-top: $space-5;
+}
+
+.title {
+  margin: 0 0 $space-2;
+  font-size: 0.8125rem;
+  font-weight: $weight-strong;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.install {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-3;
+  margin-bottom: $space-3;
+}
+
+// Looks like a chip so it reads as something to drag
+.bookmark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-3;
+  border: 1px dashed var(--color-primary);
+  border-radius: 999px;
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: $weight-bold;
+  text-decoration: none;
+  cursor: grab;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.hint {
+  flex: 1;
+  min-width: 14rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.textButton {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font: inherit;
+  font-weight: $weight-semibold;
+  text-decoration: underline;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+}
+
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: $space-1 $space-3;
+  padding: $space-3 $space-4;
+
+  & + & {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.code {
+  font-weight: $weight-bold;
+}
+
+.route {
+  color: var(--color-muted);
+}
+
+.status {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: $weight-semibold;
+}
+
+.statusDone {
+  color: var(--color-success);
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  margin-left: auto;
+  color: var(--color-primary);
+  font-weight: $weight-bold;
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.pasteLabel {
+  display: flex;
+  align-items: center;
+  gap: $space-1;
+  margin: $space-4 0 $space-2;
+  font-weight: $weight-semibold;
+}
+
+.paste {
+  width: 100%;
+  padding: $space-3 $space-4;
+  border: 2px dashed var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+  resize: none;
+
+  &:focus-visible {
+    @include focus-ring;
+    border-color: var(--color-primary);
+  }
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+  margin-top: $space-3;
+}
+
+.message {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  margin: 0 auto 0 0;
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+
+  svg {
+    flex: none;
+  }
+}
+
+.messageError {
+  color: var(--color-danger);
+}
+
+.messageSuccess {
+  color: var(--color-success);
+}
+
+.discard {
+  padding: $space-2 $space-4;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: transparent;
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: $weight-bold;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.add {
+  padding: $space-2 $space-4;
+  border: 2px solid var(--color-primary);
+  border-radius: $radius-md;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: 1rem;
+  font-weight: $weight-bold;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}

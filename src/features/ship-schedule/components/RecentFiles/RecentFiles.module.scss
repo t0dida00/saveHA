@@ -27,12 +27,42 @@
 
 .empty {
   margin: 0;
-  padding: 0 $space-5 $space-5;
+  padding: $space-3 $space-5 $space-5;
   color: var(--color-muted);
 
   @include mobile {
-    padding: 0 $space-4 $space-4;
+    padding: $space-3 $space-4 $space-4;
   }
+}
+
+// One group per carrier, each under its own heading band; the band is the divider
+.groupTitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  margin: 0;
+  padding: $space-2 $space-5;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 0.9375rem;
+  font-weight: $weight-bold;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  @include mobile {
+    padding: $space-2 $space-4;
+  }
+}
+
+// Light on the dark heading band
+.groupCount {
+  padding: 0 $space-2;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.18);
+  color: var(--color-on-primary);
+  font-size: 0.75rem;
+  letter-spacing: 0;
 }
 
 .list {
@@ -48,6 +78,11 @@
   gap: $space-3;
   padding: $space-3 $space-4 $space-3 $space-5;
   border-top: 1px solid var(--color-border);
+
+  // Right under the carrier band, which already divides
+  &:first-child {
+    border-top: 0;
+  }
 
   @include mobile {
     padding-left: $space-4;

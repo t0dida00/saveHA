@@ -39,7 +39,7 @@ type Table = {
   rows: Map<string, { label: string; values: Map<string, string> }>
 }
 
-export const firstLine = (cell = '') => cell.split('\n')[0].trim()
+const firstLine = (cell = '') => cell.split('\n')[0].trim()
 
 // Header: "ONE", then one column per service. Rows: one per week, keyed by the first line of the first cell.
 // The QueryString row holds links, not schedule data, so it is skipped.
@@ -57,7 +57,7 @@ function toTable(text: string): Table {
 }
 
 // W41/2026 → 202641, so weeks sort in calendar order; anything else goes last
-export function weekOrder(week: string) {
+function weekOrder(week: string) {
   const match = week.match(/W(\d{1,2})\/(\d{4})/i)
   return match ? Number(match[2]) * 100 + Number(match[1]) : Number.MAX_SAFE_INTEGER
 }
