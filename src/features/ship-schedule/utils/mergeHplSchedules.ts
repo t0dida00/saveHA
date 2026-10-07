@@ -6,9 +6,9 @@ import { parseCsv } from './parseCsv'
 export type HplRouteSchedule = {
   /** Service code, e.g. AA7 */
   code: string
-  /** Ports searched, e.g. HPL/VUT and NYC */
-  origin: string
-  destination: string
+  /** The route's ports, e.g. [HPL_VUT] and [NYC, ORF, CHS, SAV]; only the first of each is searched */
+  origins: string[]
+  destinations: string[]
   csv: string
 }
 
@@ -53,7 +53,7 @@ export function mergeHplSchedules(schedules: HplRouteSchedule[]): string {
     const table = parsed.get(schedule.csv)!
     const index = table.columns.get(schedule.code)
     return {
-      label: `${schedule.code}\n(${plainPort(schedule.origin)} - ${plainPort(schedule.destination)})`,
+      label: `${schedule.code}\n(${schedule.origins.map(plainPort).join('/')} - ${schedule.destinations.map(plainPort).join('/')})`,
       url: table.url ?? '',
       cell: (week: string) => (index === undefined ? 'N/A' : table.weeks.get(week)?.cells[index] || 'OMIT'),
     }

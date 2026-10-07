@@ -14,10 +14,10 @@ const toList = (rows: Row[]): PortCode[] =>
 
 const sameList = (a: PortCode[], b: PortCode[]) => JSON.stringify(a) === JSON.stringify(b)
 
-// Codes are letters and digits only, always upper case; a code may have one carrier prefix like HPL/
-const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9/]/g, '').replace(/(\/.*)\//g, '$1')
+// Codes are letters, digits and _ (for carrier rows like HPL_VUT), always upper case
+const clean = (value: string) => value.toUpperCase().replace(/[^A-Z0-9_]/g, '')
 
-/** Settings table: each port code (HPH) and the code the ONE website uses for it (VNHPH), plus carrier rows like HPL/VUT */
+/** Settings table: each port code (HPH) and the code the ONE website uses for it (VNHPH), plus carrier rows like HPL_VUT */
 export function PortCodesEditor() {
   const saved = usePortCodes()
   const [rows, setRows] = useState(() => toRows(saved))
@@ -92,7 +92,7 @@ export function PortCodesEditor() {
             </h2>
             <p className={styles.intro}>
               The code each port uses on the ONE website, e.g. HPH → VNHPH. Where Hapag-Lloyd uses a different
-              code, add it as HPL/ plus the port, e.g. HPL/VUT → VNVUT; other ports use the same code on both. Ports
+              code, add it as HPL_ plus the port, e.g. HPL_VUT → VNVUT; other ports use the same code on both. Ports
               ticked Origin are listed under Origin on each service; all others under Destination.
             </p>
           </div>

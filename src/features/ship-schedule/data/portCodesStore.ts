@@ -3,7 +3,7 @@ import defaultPortCodes from './portCodes.json'
 
 /**
  * A port (HPH), the code the ONE website uses for it (VNHPH), and which card row it appears in.
- * A carrier whose code differs has its own row, prefixed with the carrier: HPL/VUT → VNVUT.
+ * A carrier whose code differs has its own row, prefixed with the carrier: HPL_VUT → VNVUT.
  */
 export type PortCode = {
   code: string
@@ -22,10 +22,14 @@ const isPortCode = (value: unknown): value is PortCode =>
   typeof (value as PortCode).code === 'string' &&
   typeof (value as PortCode).websiteCode === 'string'
 
-// Saves from before Hapag-Lloyd had no HPL/ rows; without them HPL would search with ONE's codes
-function withCarrierDefaults(codes: PortCode[]): PortCode[] {
-  if (codes.some((entry) => entry.code.startsWith('HPL/'))) return codes
-  return [...codes, ...DEFAULT_PORT_CODES.filter((entry) => entry.code.startsWith('HPL/'))]
+// Carrier rows were first saved as HPL/VUT; they are HPL_VUT now
+export const renameCarrierPort = (code: string) => code.replace(/^HPL\//, 'HPL_')
+
+// Saves from before Hapag-Lloyd had no HPL_ rows; without them HPL would search with ONE's codes
+function withCarrierDefaults(stored: PortCode[]): PortCode[] {
+  const codes = stored.map((entry) => ({ ...entry, code: renameCarrierPort(entry.code) }))
+  if (codes.some((entry) => entry.code.startsWith('HPL_'))) return codes
+  return [...codes, ...DEFAULT_PORT_CODES.filter((entry) => entry.code.startsWith('HPL_'))]
 }
 
 // Saved codes from Settings, or the defaults from portCodes.json.

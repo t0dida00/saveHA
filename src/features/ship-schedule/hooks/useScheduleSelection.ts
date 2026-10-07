@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { renameCarrierPort } from '../data/portCodesStore'
 import { findService, portChoices, SERVICES, type Carrier } from '../data/services'
 import type { PortSide, ServiceRoute } from '../types'
 
@@ -21,7 +22,9 @@ export function today() {
 // Only the services and their ports are stored. Date and weeks always start at their defaults.
 // Keep only services that still exist in the catalogue; ports are kept as saved.
 const ports = (value: unknown) =>
-  Array.isArray(value) ? [...new Set(value.filter((port): port is string => typeof port === 'string'))] : []
+  Array.isArray(value)
+    ? [...new Set(value.filter((port): port is string => typeof port === 'string').map(renameCarrierPort))]
+    : []
 
 const defaultRoute = ({ code, origins, destinations }: ServiceRoute): ServiceRoute => ({
   code,

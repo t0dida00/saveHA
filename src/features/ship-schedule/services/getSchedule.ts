@@ -96,7 +96,7 @@ async function fetchHplRoute(request: HplScheduleRequest) {
 }
 
 /**
- * Hapag-Lloyd's API answers per port pair with every service on it, so each distinct route
+ * Hapag-Lloyd answers per port pair with every service on it, so each distinct route
  * (first origin → first destination) is asked once and the answers are merged into one file
  * with only the chosen services, in the order the card lists them.
  */
@@ -108,19 +108,17 @@ async function getHplSchedule(selection: ScheduleSelection): Promise<ScheduleFil
     const from = toWebsiteCode(origin)
     const to = toWebsiteCode(destination)
     if (!from || !to) throw new MissingWebsiteCodeError(route.code, from ? destination : origin)
-    return { code: route.code, origin, destination, from, to }
+    return { code: route.code, origins: route.origins, destinations: route.destinations, from, to }
   })
 
-  const pairs = [...new Set(routes.map(({ from, to }) => `${from}-${to}`))]
-  const answers = new Map(
-    await Promise.all(
-      pairs.map(async (pair) => {
-        const [from, to] = pair.split('-')
-        const answer = await fetchHplRoute({ date: selection.startDate, next: selection.weeks, from, to })
-        return [pair, answer] as const
-      }),
-    ),
-  )
+  // One route at a time, to go easy on Hapag-Lloyd
+  const answers = new Map<string, Awaited<ReturnType<typeof fetchHplRoute>>>()
+  for (const { from, to } of routes) {
+    const pair = `${from}-${to}`
+    if (!answers.has(pair)) {
+      answers.set(pair, await fetchHplRoute({ date: selection.startDate, next: selection.weeks, from, to }))
+    }
+  }
 
   const schedules: HplRouteSchedule[] = routes.map((route) => ({
     ...route,
