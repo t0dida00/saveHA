@@ -1,12 +1,14 @@
 import { getPortCodes, type PortCode } from './portCodesStore'
 
+export type Carrier = 'one' | 'hpl'
+
 export type Service = {
   code: string
   origins: string[]
   destinations: string[]
 }
 
-export const SERVICES: Service[] = [
+const ONE_SERVICES: Service[] = [
   { code: 'PS7', origins: ['HPH', 'VUT'], destinations: ['LAX', 'LGB', 'OAK'] },
   { code: 'MS2', origins: ['VUT'], destinations: ['LGB', 'OAK'] },
   { code: 'PS3', origins: ['VUT', 'HPH'], destinations: ['LAX', 'LGB', 'OAK'] },
@@ -21,7 +23,23 @@ export const SERVICES: Service[] = [
   { code: 'EC4', origins: ['VUT'], destinations: ['HOU', 'MOB'] },
 ]
 
-export const SERVICES_BY_CODE = new Map(SERVICES.map((service) => [service.code, service]))
+// HPL/VUT: Hapag-Lloyd's own code for VUT (see Settings); the other ports share ONE's codes
+const HPL_SERVICES: Service[] = [
+  { code: 'AA7', origins: ['HPL/VUT'], destinations: ['NYC', 'ORF', 'CHS', 'SAV'] },
+  { code: 'US4', origins: ['HPL/VUT'], destinations: ['NYC', 'ORF', 'CHS', 'SAV'] },
+  { code: 'WC1', origins: ['HPL/VUT'], destinations: ['LAX', 'LGB'] },
+]
+
+export const SERVICES: Record<Carrier, Service[]> = { one: ONE_SERVICES, hpl: HPL_SERVICES }
+
+const SERVICES_BY_CODE: Record<Carrier, Map<string, Service>> = {
+  one: new Map(ONE_SERVICES.map((service) => [service.code, service])),
+  hpl: new Map(HPL_SERVICES.map((service) => [service.code, service])),
+}
+
+export function findService(carrier: Carrier, code: string | undefined) {
+  return code ? SERVICES_BY_CODE[carrier].get(code) : undefined
+}
 
 // Works for a catalogue service or a user's route; a side with no ports shows as "—"
 export function formatRoute({ origins, destinations }: Pick<Service, 'origins' | 'destinations'>) {
@@ -29,24 +47,30 @@ export function formatRoute({ origins, destinations }: Pick<Service, 'origins' |
 }
 
 // True when the route has exactly the service's own ports, in any order
-export function isDefaultRoute(route: Pick<Service, 'code' | 'origins' | 'destinations'>) {
-  const service = SERVICES_BY_CODE.get(route.code)
+export function isDefaultRoute(carrier: Carrier, route: Pick<Service, 'code' | 'origins' | 'destinations'>) {
+  const service = findService(carrier, route.code)
   if (!service) return true
   const same = (a: string[], b: string[]) => a.length === b.length && a.every((port) => b.includes(port))
   return same(route.origins, service.origins) && same(route.destinations, service.destinations)
 }
 
-// Every port the services use by default, for Settings to flag ports that have no website code
-export const ALL_PORTS = [...new Set(SERVICES.flatMap((service) => [...service.origins, ...service.destinations]))]
+// Every port any carrier's services use by default, for Settings to flag ports that have no website code
+export const ALL_PORTS = [
+  ...new Set(Object.values(SERVICES).flatMap((list) => list.flatMap((service) => [...service.origins, ...service.destinations]))),
+]
+
+/** VUT for HPL/VUT: the plain port, as written in a file's column headers */
+export const plainPort = (port: string) => port.slice(port.indexOf('/') + 1)
 
 // Ports a card offers on one row, in Settings order: codes ticked "Origin" go on the Origin row, all others on
-// the Destination row. Ports the route already has stay listed even if Settings moved or removed them.
+// the Destination row. Every card lists every port, carrier rows like HPL/VUT included.
+// Ports the route already has stay listed even if Settings moved or removed them.
 export function portChoices(side: 'origins' | 'destinations', selected: string[] = [], codes = getPortCodes()) {
   const onSide = codes.filter((entry) => (side === 'origins' ? entry.isOrigin : !entry.isOrigin))
   return [...new Set([...onSide.map((entry) => entry.code), ...selected])]
 }
 
-// Website code of a port, e.g. VUT → VNCMP. The codes are edited in Settings.
+// Website code of a port, e.g. VUT → VNCMP, HPL/VUT → VNVUT. The codes are edited in Settings.
 export function toWebsiteCode(port?: string, codes: PortCode[] = getPortCodes()): string | undefined {
   return port ? codes.find((entry) => entry.code === port)?.websiteCode || undefined : undefined
 }

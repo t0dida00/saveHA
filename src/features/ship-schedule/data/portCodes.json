@@ -10,6 +10,11 @@
     "isOrigin": true
   },
   {
+    "code": "HPL/VUT",
+    "websiteCode": "VNVUT",
+    "isOrigin": true
+  },
+  {
     "code": "LAX",
     "websiteCode": "USLAX",
     "isOrigin": false

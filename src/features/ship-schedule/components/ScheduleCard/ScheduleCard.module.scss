@@ -1,0 +1,228 @@
+@use '@/styles/tokens' as *;
+
+.section {
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+}
+
+.sectionBody {
+  padding: $space-5;
+
+  @include mobile {
+    padding: $space-4;
+  }
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-3;
+  margin-bottom: $space-4;
+}
+
+.resetAll {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  flex: none;
+  height: 36px;
+  padding: 0 $space-3;
+  border: 0;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+// Title with the scraper status under it
+.sectionTitleGroup {
+  min-width: 0;
+}
+
+.logo {
+  display: block;
+  width: auto;
+  height: 32px;
+
+  // A wide wordmark: shorter so it takes about as much room as ONE's
+  &[data-carrier='hpl'] {
+    height: 22px;
+  }
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: $weight-bold;
+}
+
+.empty {
+  margin: $space-4 0 0;
+  color: var(--color-muted);
+}
+
+.cards {
+  margin: $space-4 0 0;
+  padding: 0;
+  overflow: hidden;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: $space-3;
+  padding: $space-4 $space-5;
+  border-top: 1px solid var(--color-border);
+
+  @include mobile {
+    padding: $space-4;
+  }
+}
+
+.saveStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  margin: 0 auto 0 0;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+
+  @include mobile {
+    flex-basis: 100%;
+  }
+}
+
+.saveStatusSaved {
+  color: var(--color-success);
+}
+
+.saveStatusError {
+  color: var(--color-danger);
+}
+
+%button {
+  padding: $space-3 $space-5;
+  border-radius: $radius-md;
+  font-size: 1.0625rem;
+  font-weight: $weight-bold;
+  cursor: pointer;
+  transition:
+    background-color 150ms ease,
+    transform 100ms ease;
+
+  &:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.primary {
+  @extend %button;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $space-2;
+  border: 2px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-strong);
+    background: var(--color-primary-strong);
+  }
+
+  // Loading: stays fully visible (not the faded disabled look)
+  &[aria-busy='true'] {
+    opacity: 1;
+    cursor: progress;
+  }
+}
+
+.spinner {
+  flex: none;
+  animation: spin 800ms linear infinite;
+}
+
+.elapsed {
+  min-width: 2.5ch;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+  font-weight: $weight-semibold;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@include reduced-motion {
+  .spinner {
+    animation-duration: 2400ms;
+  }
+}
+
+.secondary {
+  @extend %button;
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text);
+
+  &:hover:not(:disabled) {
+    background: var(--color-hover);
+  }
+}
+
+.error,
+.success {
+  display: flex;
+  align-items: flex-start;
+  gap: $space-2;
+  margin: $space-4 0 0;
+  font-weight: $weight-semibold;
+
+  svg {
+    flex: none;
+    margin-top: 2px;
+  }
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+.success {
+  color: var(--color-success);
+}

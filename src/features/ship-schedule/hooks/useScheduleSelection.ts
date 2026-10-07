@@ -1,21 +1,21 @@
 import { useCallback, useState } from 'react'
-import { portChoices, SERVICES, SERVICES_BY_CODE } from '../data/services'
-import type { PortSide, ScheduleSelection, ServiceRoute } from '../types'
+import { findService, portChoices, SERVICES, type Carrier } from '../data/services'
+import type { PortSide, ServiceRoute } from '../types'
 
-const STORAGE_KEY = 'saveha.shipSchedule.selection'
+// ONE keeps its original key so saved selections survive
+const STORAGE_KEYS: Record<Carrier, string> = {
+  one: 'saveha.shipSchedule.selection',
+  hpl: 'saveha.shipSchedule.hpl.selection',
+}
 
 export const WEEK_OPTIONS = [2, 4, 6, 8]
-const DEFAULT_WEEKS = 8
+export const DEFAULT_WEEKS = 8
 
-function today() {
+export function today() {
   const now = new Date()
   const month = String(now.getMonth() + 1).padStart(2, '0')
   const day = String(now.getDate()).padStart(2, '0')
   return `${now.getFullYear()}-${month}-${day}`
-}
-
-function defaultSelection(): ScheduleSelection {
-  return { startDate: today(), weeks: DEFAULT_WEEKS, services: [] }
 }
 
 // Only the services and their ports are stored. Date and weeks always start at their defaults.
@@ -23,106 +23,92 @@ function defaultSelection(): ScheduleSelection {
 const ports = (value: unknown) =>
   Array.isArray(value) ? [...new Set(value.filter((port): port is string => typeof port === 'string'))] : []
 
-function loadServices(): ServiceRoute[] {
+const defaultRoute = ({ code, origins, destinations }: ServiceRoute): ServiceRoute => ({
+  code,
+  origins: [...origins],
+  destinations: [...destinations],
+})
+
+function loadServices(carrier: Carrier): ServiceRoute[] {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEYS[carrier])
     if (!raw) return []
     const stored = JSON.parse(raw) as { services?: ServiceRoute[] }
     return (Array.isArray(stored.services) ? stored.services : []).flatMap((route) => {
-      const service = SERVICES_BY_CODE.get(route?.code)
+      const service = findService(carrier, route?.code)
       if (!service) return []
-      return [
-        {
-          code: service.code,
-          origins: ports(route.origins),
-          destinations: ports(route.destinations),
-        },
-      ]
+      return [{ code: service.code, origins: ports(route.origins), destinations: ports(route.destinations) }]
     })
   } catch {
     return []
   }
 }
 
-export function useScheduleSelection() {
-  const [selection, setSelection] = useState(() => ({ ...defaultSelection(), services: loadServices() }))
+/** One carrier's chosen services and their ports, saved in this browser per carrier */
+export function useScheduleSelection(carrier: Carrier) {
+  const [services, setServices] = useState(() => loadServices(carrier))
   // What Save last wrote (or what was loaded), to tell whether the services have unsaved changes
-  const [savedJson, setSavedJson] = useState(() => JSON.stringify(selection.services))
-  const isDirty = JSON.stringify(selection.services) !== savedJson
+  const [savedJson, setSavedJson] = useState(() => JSON.stringify(services))
+  const isDirty = JSON.stringify(services) !== savedJson
+  const catalogue = SERVICES[carrier]
 
   // Returns false when storage is unavailable (private mode, blocked)
   const save = useCallback(() => {
-    const json = JSON.stringify(selection.services)
+    const json = JSON.stringify(services)
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ services: selection.services }))
+      localStorage.setItem(STORAGE_KEYS[carrier], JSON.stringify({ services }))
     } catch {
       return false
     }
     setSavedJson(json)
     return true
-  }, [selection.services])
-
-  const setStartDate = useCallback((startDate: string) => setSelection((s) => ({ ...s, startDate })), [])
-
-  const setWeeks = useCallback((weeks: number) => setSelection((s) => ({ ...s, weeks })), [])
+  }, [carrier, services])
 
   // A newly added service starts with all of its ports selected
-  const toggleService = useCallback((code: string) => {
-    setSelection((s) => {
-      if (s.services.some((route) => route.code === code)) {
-        return { ...s, services: s.services.filter((route) => route.code !== code) }
-      }
-      const service = SERVICES_BY_CODE.get(code)
-      if (!service) return s
-      const route = { code, origins: [...service.origins], destinations: [...service.destinations] }
-      return { ...s, services: [...s.services, route] }
-    })
-  }, [])
+  const toggleService = useCallback(
+    (code: string) => {
+      setServices((current) => {
+        if (current.some((route) => route.code === code)) return current.filter((route) => route.code !== code)
+        const service = findService(carrier, code)
+        return service ? [...current, defaultRoute(service)] : current
+      })
+    },
+    [carrier],
+  )
 
   // All selected: deselect every service. Otherwise add the missing ones (with default ports) and keep the rest.
   const toggleAllServices = useCallback(() => {
-    setSelection((s) => {
-      if (s.services.length === SERVICES.length) return { ...s, services: [] }
-      const services = SERVICES.map(
-        (service) =>
-          s.services.find((route) => route.code === service.code) ?? {
-            code: service.code,
-            origins: [...service.origins],
-            destinations: [...service.destinations],
-          },
-      )
-      return { ...s, services }
-    })
-  }, [])
+    setServices((current) =>
+      current.length === catalogue.length
+        ? []
+        : catalogue.map((service) => current.find((route) => route.code === service.code) ?? defaultRoute(service)),
+    )
+  }, [catalogue])
 
   // Drag and drop: move a service to where another one is. The order is kept by Save and used for the request.
   const moveService = useCallback((code: string, overCode: string) => {
-    setSelection((s) => {
-      const from = s.services.findIndex((route) => route.code === code)
-      const to = s.services.findIndex((route) => route.code === overCode)
-      if (from < 0 || to < 0 || from === to) return s
-      const services = [...s.services]
-      services.splice(to, 0, ...services.splice(from, 1))
-      return { ...s, services }
+    setServices((current) => {
+      const from = current.findIndex((route) => route.code === code)
+      const to = current.findIndex((route) => route.code === overCode)
+      if (from < 0 || to < 0 || from === to) return current
+      const next = [...current]
+      next.splice(to, 0, ...next.splice(from, 1))
+      return next
     })
   }, [])
 
   const resetAllRoutes = useCallback(() => {
-    setSelection((s) => ({
-      ...s,
-      services: s.services.map((route) => {
-        const service = SERVICES_BY_CODE.get(route.code)
-        return service
-          ? { code: service.code, origins: [...service.origins], destinations: [...service.destinations] }
-          : route
+    setServices((current) =>
+      current.map((route) => {
+        const service = findService(carrier, route.code)
+        return service ? defaultRoute(service) : route
       }),
-    }))
-  }, [])
+    )
+  }, [carrier])
 
   const togglePort = useCallback((code: string, side: PortSide, port: string) => {
-    setSelection((s) => ({
-      ...s,
-      services: s.services.map((route) => {
+    setServices((current) =>
+      current.map((route) => {
         if (route.code !== code) return route
         const ports = route[side].includes(port)
           ? route[side].filter((p) => p !== port)
@@ -130,21 +116,16 @@ export function useScheduleSelection() {
             portChoices(side, [...route[side], port]).filter((p) => p === port || route[side].includes(p))
         return { ...route, [side]: ports }
       }),
-    }))
+    )
   }, [])
 
-  // Throws away unsaved changes: services go back to what Save last wrote (date and weeks aren't saved, so they stay)
-  const cancelChanges = useCallback(
-    () => setSelection((s) => ({ ...s, services: JSON.parse(savedJson) as ServiceRoute[] })),
-    [savedJson],
-  )
+  // Throws away unsaved changes: services go back to what Save last wrote
+  const cancelChanges = useCallback(() => setServices(JSON.parse(savedJson) as ServiceRoute[]), [savedJson])
 
   return {
-    selection,
+    services,
     isDirty,
     save,
-    setStartDate,
-    setWeeks,
     toggleService,
     toggleAllServices,
     togglePort,

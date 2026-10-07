@@ -1,26 +1,12 @@
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
-import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { CircleAlert, CircleCheck, ChevronDown, LoaderCircle, RotateCcw } from 'lucide-react'
-import { useEffect, useId, useState } from 'react'
-import oneLogo from '@/shared/assets/one-logo.svg'
+import { ChevronDown } from 'lucide-react'
+import { useId, useState } from 'react'
 import { PageHeader } from '@/shared/components'
 import { RecentFiles, type UpdateState } from '../../components/RecentFiles/RecentFiles'
-import { RouteCard } from '../../components/RouteCard/RouteCard'
+import { ScheduleCard } from '../../components/ScheduleCard/ScheduleCard'
 import { ScraperStatus } from '../../components/ScraperStatus/ScraperStatus'
-import { ServicePicker } from '../../components/ServicePicker/ServicePicker'
-import { isDefaultRoute, SERVICES_BY_CODE } from '../../data/services'
 import { useRecentFiles } from '../../hooks/useRecentFiles'
-import { useScheduleSelection, WEEK_OPTIONS } from '../../hooks/useScheduleSelection'
-import { getLatestSchedule, getSchedule } from '../../services/getSchedule'
+import { DEFAULT_WEEKS, today, WEEK_OPTIONS } from '../../hooks/useScheduleSelection'
+import { getLatestSchedule } from '../../services/getSchedule'
 import styles from './ShipSchedulePage.module.scss'
 
 const LAST_UPDATE_KEY = 'saveha.shipSchedule.lastUpdate'
@@ -41,79 +27,15 @@ function storeLastUpdate(iso: string) {
   }
 }
 
-type RequestState =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'error'; message: string }
-  | { status: 'success'; fileName: string }
-
-// Spinner plus seconds elapsed: an "all services" request takes about a minute
-function LoadingLabel() {
-  const [seconds, setSeconds] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => setSeconds((s) => s + 1), 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  return (
-    <>
-      <LoaderCircle size={20} aria-hidden="true" className={styles.spinner} />
-      Getting schedule…
-      <span className={styles.elapsed}>{seconds}s</span>
-    </>
-  )
-}
-
 export function ShipSchedulePage() {
-  const {
-    selection,
-    isDirty,
-    save,
-    setStartDate,
-    setWeeks,
-    toggleService,
-    toggleAllServices,
-    togglePort,
-    resetAllRoutes,
-    moveService,
-    cancelChanges,
-  } = useScheduleSelection()
-  // Small move threshold so a click on the handle isn't a drag; arrow keys reorder from the keyboard
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-  const handleDragEnd = ({ active, over }: DragEndEvent) => {
-    if (over) moveService(String(active.id), String(over.id))
-  }
+  // Shared by every carrier's card. Not saved: they always start at today and 8 weeks.
+  const [startDate, setStartDate] = useState(today)
+  const [weeks, setWeeks] = useState(DEFAULT_WEEKS)
   const { files, addFile, removeFile } = useRecentFiles()
-  const [request, setRequest] = useState<RequestState>({ status: 'idle' })
   const [update, setUpdate] = useState<UpdateState>({ status: 'idle' })
   const [lastUpdate, setLastUpdate] = useState(loadLastUpdate)
-  const [saveFailed, setSaveFailed] = useState(false)
   const dateId = useId()
   const weeksId = useId()
-  const sectionTitleId = useId()
-
-  const allDefault = selection.services.every(isDefaultRoute)
-
-  const canSubmit =
-    Boolean(selection.startDate) &&
-    selection.services.length > 0 &&
-    selection.services.every((route) => route.origins.length > 0 && route.destinations.length > 0)
-
-  const handleGetSchedule = async () => {
-    if (!canSubmit || request.status === 'loading') return
-    setRequest({ status: 'loading' })
-    try {
-      const file = await getSchedule(selection)
-      addFile(file)
-      setRequest({ status: 'success', fileName: file.name })
-    } catch (error) {
-      setRequest({ status: 'error', message: error instanceof Error ? error.message : 'Something went wrong.' })
-    }
-  }
 
   // The scheduled job's file only changes weekly: a copy fetched within the last day is reused,
   // and one already in Results isn't added again
@@ -136,16 +58,9 @@ export function ShipSchedulePage() {
     }
   }
 
-  const handleSave = () => setSaveFailed(!save())
-
-  const handleCancel = () => {
-    cancelChanges()
-    setSaveFailed(false)
-  }
-
   return (
     <>
-      <PageHeader title="Check ship schedule" description="Pick a start date, the services and their routes." />
+      <PageHeader title="Check ship schedule" description="Pick a start date, then each carrier's services and their routes." />
 
       <div className={styles.fields}>
         <div className={styles.field}>
@@ -156,7 +71,7 @@ export function ShipSchedulePage() {
             id={dateId}
             className={styles.control}
             type="date"
-            value={selection.startDate}
+            value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
         </div>
@@ -168,12 +83,12 @@ export function ShipSchedulePage() {
             <select
               id={weeksId}
               className={`${styles.control} ${styles.select}`}
-              value={selection.weeks}
+              value={weeks}
               onChange={(e) => setWeeks(Number(e.target.value))}
             >
-              {WEEK_OPTIONS.map((weeks) => (
-                <option key={weeks} value={weeks}>
-                  {weeks} weeks
+              {WEEK_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option} weeks
                 </option>
               ))}
             </select>
@@ -184,112 +99,8 @@ export function ShipSchedulePage() {
 
       <div className={styles.columns}>
         <div className={styles.main}>
-          <section className={styles.section} aria-labelledby={sectionTitleId}>
-            <div className={styles.sectionBody}>
-              <div className={styles.sectionHead}>
-                <div className={styles.sectionTitleGroup}>
-                  <h2 id={sectionTitleId} className={styles.sectionTitle}>
-                    <img src={oneLogo} alt="ONE" width={90} height={40} className={styles.logo} />
-                  </h2>
-                  <ScraperStatus />
-                </div>
-                <button
-                  type="button"
-                  className={styles.resetAll}
-                  onClick={resetAllRoutes}
-                  disabled={allDefault}
-                  title="Set every selected service back to its default ports"
-                >
-                  <RotateCcw size={16} aria-hidden="true" />
-                  Reset to default
-                </button>
-              </div>
-              <ServicePicker
-                selected={selection.services.map((route) => route.code)}
-                onToggle={toggleService}
-                onToggleAll={toggleAllServices}
-              />
-
-              {selection.services.length === 0 ? (
-                <p className={styles.empty}>Pick one or more services to choose their routes.</p>
-              ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  modifiers={[restrictToVerticalAxis, restrictToParentElement]}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={selection.services.map((route) => route.code)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <ul className={styles.cards}>
-                      {selection.services.map((route) => {
-                        const service = SERVICES_BY_CODE.get(route.code)
-                        if (!service) return null
-                        return (
-                          <RouteCard
-                            key={route.code}
-                            service={service}
-                            route={route}
-                            onTogglePort={(side, port) => togglePort(route.code, side, port)}
-                            onRemove={() => toggleService(route.code)}
-                          />
-                        )
-                      })}
-                    </ul>
-                  </SortableContext>
-                </DndContext>
-              )}
-            </div>
-
-            <footer className={styles.footer}>
-              <p
-                className={`${styles.saveStatus} ${saveFailed ? styles.saveStatusError : !isDirty ? styles.saveStatusSaved : ''}`}
-                role="status"
-              >
-                {saveFailed ? (
-                  "Couldn't save in this browser."
-                ) : isDirty ? (
-                  'Unsaved changes'
-                ) : (
-                  <>
-                    <CircleCheck size={16} aria-hidden="true" /> Saved
-                  </>
-                )}
-              </p>
-              <button type="button" className={styles.secondary} onClick={handleCancel} disabled={!isDirty}>
-                Cancel
-              </button>
-              <button type="button" className={styles.secondary} onClick={handleSave} disabled={!isDirty}>
-                Save
-              </button>
-              <button
-                type="button"
-                className={styles.primary}
-                onClick={handleGetSchedule}
-                disabled={!canSubmit || request.status === 'loading'}
-                aria-busy={request.status === 'loading'}
-              >
-                {request.status === 'loading' ? <LoadingLabel /> : 'Get Schedule'}
-              </button>
-            </footer>
-          </section>
-
-          <div aria-live="polite">
-            {request.status === 'error' && (
-              <p className={styles.error} role="alert">
-                <CircleAlert size={18} aria-hidden="true" />
-                {request.message}
-              </p>
-            )}
-            {request.status === 'success' && (
-              <p className={styles.success}>
-                <CircleCheck size={18} aria-hidden="true" />
-                {request.fileName} was added to ONE's files.
-              </p>
-            )}
-          </div>
+          <ScheduleCard carrier="one" startDate={startDate} weeks={weeks} status={<ScraperStatus />} onFile={addFile} />
+          <ScheduleCard carrier="hpl" startDate={startDate} weeks={weeks} onFile={addFile} />
         </div>
 
         <RecentFiles files={files} onRemove={removeFile} onUpdate={handleUpdate} update={update} lastUpdate={lastUpdate} />

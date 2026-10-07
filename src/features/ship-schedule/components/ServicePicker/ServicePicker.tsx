@@ -1,15 +1,17 @@
 import { Check, ChevronDown, Minus } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
-import { formatRoute, SERVICES } from '../../data/services'
+import { formatRoute, type Service } from '../../data/services'
 import styles from './ServicePicker.module.scss'
 
 type ServicePickerProps = {
+  /** The carrier's catalogue */
+  services: Service[]
   selected: string[]
   onToggle: (code: string) => void
   onToggleAll: () => void
 }
 
-export function ServicePicker({ selected, onToggle, onToggleAll }: ServicePickerProps) {
+export function ServicePicker({ services, selected, onToggle, onToggleAll }: ServicePickerProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -34,7 +36,7 @@ export function ServicePicker({ selected, onToggle, onToggleAll }: ServicePicker
     }
   }, [open])
 
-  const allSelected = selected.length === SERVICES.length
+  const allSelected = selected.length === services.length
   const someSelected = selected.length > 0 && !allSelected
 
   const label = allSelected
@@ -80,7 +82,7 @@ export function ServicePicker({ selected, onToggle, onToggleAll }: ServicePicker
               <span className={styles.allLabel}>Choose all</span>
             </button>
           </li>
-          {SERVICES.map((service) => {
+          {services.map((service) => {
             const isSelected = selected.includes(service.code)
             return (
               <li key={service.code} role="presentation">
