@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Upload, X } from 'lucide-react'
+import { Eye, FileSpreadsheet, Upload, X } from 'lucide-react'
 import { useId, useRef, useState, type DragEvent } from 'react'
 import { formatFileSize, isSpreadsheetFile, SPREADSHEET_ACCEPT } from '../../utils/spreadsheetFiles'
 import styles from './FileInput.module.scss'
@@ -14,13 +14,24 @@ type FileInputProps = {
   multiple?: boolean
   files: File[]
   onChange: (files: File[]) => void
+  /** Shows a Preview button on each file */
+  onPreview?: (file: File) => void
 }
 
 // Same name, size and modified time counts as the same file
 const fileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`
 
 // CSV / Excel picker: drop files on it or browse, then remove any from the list
-export function FileInput({ title, description, compact = false, label, multiple = false, files, onChange }: FileInputProps) {
+export function FileInput({
+  title,
+  description,
+  compact = false,
+  label,
+  multiple = false,
+  files,
+  onChange,
+  onPreview,
+}: FileInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
   const errorId = useId()
@@ -126,6 +137,17 @@ export function FileInput({ title, description, compact = false, label, multiple
                 {file.name}
               </span>
               <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+              {onPreview && (
+                <button
+                  type="button"
+                  className={styles.fileAction}
+                  onClick={() => onPreview(file)}
+                  aria-label={`Preview ${file.name}`}
+                  title="Preview"
+                >
+                  <Eye size={16} aria-hidden="true" />
+                </button>
+              )}
               <button
                 type="button"
                 className={styles.remove}

@@ -1,7 +1,9 @@
-import { FileDown } from 'lucide-react'
+import { Check, Circle, Eye, FileDown, FileSpreadsheet, X } from 'lucide-react'
 import { useId, useState } from 'react'
 import { PageHeader } from '@/shared/components'
 import { FileInput } from '../../components/FileInput/FileInput'
+import { FilePreview } from '../../components/FilePreview/FilePreview'
+import { WeekPicker } from '../../components/WeekPicker/WeekPicker'
 import { useSavedOutputSample } from '../../hooks/useSavedOutputSample'
 import {
   AIR_EXPORT,
@@ -13,30 +15,25 @@ import {
   SEA_EXPORT,
   SEA_IMPORT,
 } from '../../utils/buildReport'
+import { detectInput, type InputSlot } from '../../utils/detectInput'
 import { downloadWorkbookFile } from '../../utils/excel'
+import { formatFileSize } from '../../utils/spreadsheetFiles'
+import { addDays, formatDay, weekOfRange } from '../../utils/weeks'
 import styles from './ReportPage.module.scss'
 
-const INPUT_GROUPS = [
-  {
-    title: 'Sea',
-    inputs: [
-      { key: 'seaImport', title: 'Import' },
-      { key: 'seaExport', title: 'Export' },
-    ],
-  },
-  {
-    title: 'Air',
-    inputs: [
-      { key: 'airImport', title: 'Import' },
-      { key: 'airExport', title: 'Export' },
-    ],
-  },
+// The input categories, one file each, in the order their chips show
+const SLOTS = [
+  { key: 'seaImport', name: 'Sea Import' },
+  { key: 'seaExport', name: 'Sea Export' },
+  { key: 'airImport', name: 'Air Import' },
+  { key: 'airExport', name: 'Air Export' },
+  { key: 'volume', name: 'Volume' },
 ] as const
 
-type InputKey = (typeof INPUT_GROUPS)[number]['inputs'][number]['key']
+type SlotKey = (typeof SLOTS)[number]['key']
 
-// Inputs the report can be built from so far, in the order their rows go into it
-const SUPPORTED_INPUTS: { key: InputKey; kind: InputKind }[] = [
+// Inputs the report is built from, in the order their rows go into it
+const SUPPORTED_INPUTS: { key: Exclude<SlotKey, 'volume'>; kind: InputKind }[] = [
   { key: 'seaExport', kind: SEA_EXPORT },
   { key: 'seaImport', kind: SEA_IMPORT },
   { key: 'airExport', kind: AIR_EXPORT },
@@ -61,30 +58,98 @@ const reportFileName = (date: Date) => {
   return `FINAL-REPORT-${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()}.xlsx`
 }
 
+const SLOT_NAMES: Record<InputSlot, string> = {
+  seaImport: 'Sea Import',
+  seaExport: 'Sea Export',
+  airImport: 'Air Import',
+  airExport: 'Air Export',
+  volume: 'Volume',
+  outputSample: 'Output sample',
+}
+
+// Notes from the last drop on "Add files"; placed files show on the chips and in the list instead
+type SortStatus =
+  | { kind: 'idle' }
+  | { kind: 'working' }
+  | { kind: 'tooMany'; count: number }
+  | { kind: 'done'; notes: { name: string; text: string; problem: boolean }[] }
+
+// One file per category: Sea Import, Sea Export, Air Import, Air Export and Volume
+const MAX_FILES = 5
+
 export function ReportPage() {
   const inputsTitleId = useId()
   const createTitleId = useId()
   const fromId = useId()
   const toId = useId()
+  const weekLabelId = useId()
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
   const [outputSample, setOutputSample] = useSavedOutputSample()
-  const [volume, setVolume] = useState<File[]>([])
-  const [inputs, setInputs] = useState<Record<InputKey, File[]>>({
-    seaImport: [],
-    seaExport: [],
-    airImport: [],
-    airExport: [],
+  const [files, setFiles] = useState<Record<SlotKey, File | null>>({
+    seaImport: null,
+    seaExport: null,
+    airImport: null,
+    airExport: null,
+    volume: null,
   })
+  const [sortStatus, setSortStatus] = useState<SortStatus>({ kind: 'idle' })
+  const [previewing, setPreviewing] = useState<File | null>(null)
 
-  const reportInputs: ReportInput[] = SUPPORTED_INPUTS.flatMap(({ key, kind }) =>
-    inputs[key].map((file) => ({ kind, file })),
-  )
+  // Files dropped on "Add files" go to their category, by name or else by what is in them. A category holds one
+  // file, so a new one replaces it; a second file for the same category in one drop is skipped
+  const addFiles = async (dropped: File[]) => {
+    if (dropped.length > MAX_FILES) {
+      setSortStatus({ kind: 'tooMany', count: dropped.length })
+      return
+    }
+    setSortStatus({ kind: 'working' })
+    const slots = await Promise.all(dropped.map(detectInput))
+    const placed = new Map<InputSlot, string>()
+    const notes: { name: string; text: string; problem: boolean }[] = []
+    const next = { ...files }
+    dropped.forEach((file, index) => {
+      const slot = slots[index]
+      if (!slot) {
+        notes.push({ name: file.name, text: 'not recognised as a Sea, Air or Volume file', problem: true })
+        return
+      }
+      const first = placed.get(slot)
+      if (first) {
+        notes.push({
+          name: file.name,
+          text: `skipped, ${first} is already the ${SLOT_NAMES[slot]} file`,
+          problem: true,
+        })
+        return
+      }
+      placed.set(slot, file.name)
+      if (slot === 'outputSample') {
+        setOutputSample([file])
+        notes.push({ name: file.name, text: 'set as the output sample', problem: false })
+        return
+      }
+      const replaced = next[slot]
+      if (replaced && replaced.name !== file.name) {
+        notes.push({ name: file.name, text: `replaced ${replaced.name} as ${SLOT_NAMES[slot]}`, problem: false })
+      }
+      next[slot] = file
+    })
+    setFiles(next)
+    setSortStatus({ kind: 'done', notes })
+  }
+
+  const removeFile = (key: SlotKey) => setFiles((current) => ({ ...current, [key]: null }))
+
+  const reportInputs: ReportInput[] = SUPPORTED_INPUTS.flatMap(({ key, kind }) => {
+    const file = files[key]
+    return file ? [{ kind, file }] : []
+  })
   const missing = [
     outputSample.length === 0 && 'an output sample',
     reportInputs.length === 0 && 'a Sea or Air file',
-    volume.length === 0 && 'a Volume file',
+    !files.volume && 'a Volume file',
     !from && 'a From date',
     !to && 'a To date',
   ].filter((item) => item !== false)
@@ -95,12 +160,10 @@ export function ReportPage() {
     setStatus({ kind: 'working' })
     try {
       const sample = outputSample[0]
-      const { buffer, ...report } = await buildReport(sample, reportInputs, volume[0], { from, to })
+      const { buffer, ...report } = await buildReport(sample, reportInputs, files.volume!, { from, to })
       downloadWorkbookFile(buffer, reportFileName(new Date()))
-      // Every input with a file, in the page's order, so ones the report cannot use yet are listed too
-      const inputNames = INPUT_GROUPS.flatMap((group) =>
-        group.inputs.filter(({ key }) => inputs[key].length > 0).map(({ title }) => `${group.title} ${title}`),
-      )
+      // Every Sea and Air input with a file, in the chips' order
+      const inputNames = SLOTS.filter(({ key }) => key !== 'volume' && files[key]).map(({ name }) => name)
       setStatus({ kind: 'done', report, inputNames })
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : 'The report could not be created.' })
@@ -116,35 +179,92 @@ export function ReportPage() {
           description="One Excel file showing how the report should look. It is kept in this browser for next time."
           files={outputSample}
           onChange={setOutputSample}
+          onPreview={setPreviewing}
         />
         <section className={styles.inputs} aria-labelledby={inputsTitleId}>
           <div>
             <h2 id={inputsTitleId} className={styles.title}>
               Inputs
             </h2>
-            <p className={styles.description}>The CSV or Excel files the report is built from.</p>
+            <p className={styles.description}>
+              Drop the Sea, Air and Volume files here, up to {MAX_FILES}. Each is sorted into its category by a name
+              like SEA-EXPORT or AIR-IMPORT, or else by its File Nos.
+            </p>
           </div>
-          {INPUT_GROUPS.map((group) => (
-            <div key={group.title} className={styles.group}>
-              <h3 className={styles.groupTitle}>{group.title}</h3>
-              <div className={styles.groupInputs}>
-                {group.inputs.map(({ key, title }) => (
-                  <FileInput
-                    key={key}
-                    title={title}
-                    label={`${group.title} ${title}`}
-                    compact
-                    multiple
-                    files={inputs[key]}
-                    onChange={(files) => setInputs((current) => ({ ...current, [key]: files }))}
-                  />
+          <FileInput title="Add files" label="Add input files" compact multiple files={[]} onChange={addFiles} />
+
+          <ul className={styles.chips} aria-label="Categories">
+            {SLOTS.map(({ key, name }) => {
+              const file = files[key]
+              return (
+                <li key={key} className={`${styles.chip} ${file ? styles.chipDone : ''}`}>
+                  {file ? (
+                    <Check size={16} aria-hidden="true" className={styles.chipIcon} />
+                  ) : (
+                    <Circle size={16} aria-hidden="true" className={styles.chipIcon} />
+                  )}
+                  {name}
+                  <span className={styles.visuallyHidden}>{file ? `: ${file.name}` : ': no file yet'}</span>
+                </li>
+              )
+            })}
+          </ul>
+
+          <div role="status">
+            {sortStatus.kind === 'working' && <p className={styles.sortNote}>Sorting the files…</p>}
+            {sortStatus.kind === 'tooMany' && (
+              <p className={styles.sortProblem} role="alert">
+                {sortStatus.count} files is too many. Add up to {MAX_FILES}: Sea Import, Sea Export, Air Import, Air
+                Export and Volume.
+              </p>
+            )}
+            {sortStatus.kind === 'done' && sortStatus.notes.length > 0 && (
+              <ul className={styles.sortList}>
+                {sortStatus.notes.map(({ name, text, problem }) => (
+                  <li key={name} className={problem ? styles.sortProblem : styles.sortNote}>
+                    <span className={styles.sortFile}>{name}</span>: {text}
+                  </li>
                 ))}
-              </div>
-            </div>
-          ))}
-          <div className={styles.group}>
-            <FileInput title="Volume" label="Volume report" compact files={volume} onChange={setVolume} />
+              </ul>
+            )}
           </div>
+
+          {SLOTS.some(({ key }) => files[key]) && (
+            <ul className={styles.fileList}>
+              {SLOTS.map(({ key, name }) => {
+                const file = files[key]
+                if (!file) return null
+                return (
+                  <li key={key} className={styles.file}>
+                    <FileSpreadsheet size={18} aria-hidden="true" className={styles.fileIcon} />
+                    <span className={styles.fileName} title={file.name}>
+                      {file.name}
+                    </span>
+                    <span className={styles.fileTag}>{name}</span>
+                    <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+                    <button
+                      type="button"
+                      className={styles.fileAction}
+                      onClick={() => setPreviewing(file)}
+                      aria-label={`Preview ${file.name}`}
+                      title="Preview"
+                    >
+                      <Eye size={16} aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.fileAction} ${styles.fileRemove}`}
+                      onClick={() => removeFile(key)}
+                      aria-label={`Remove ${file.name}`}
+                      title="Remove"
+                    >
+                      <X size={16} aria-hidden="true" />
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </section>
       </div>
 
@@ -155,10 +275,24 @@ export function ReportPage() {
           </h2>
           <p className={styles.description}>
             Fills the output sample from the Sea and Air files, with customer and sales details from the Volume file.
-            Pick the date range: export files are filtered by ETD, import files by ETA.
+            Pick a week, or set From and To: export files are filtered by ETD, import files by ETA.
           </p>
         </div>
         <div className={styles.fields}>
+          <div className={styles.field}>
+            <span id={weekLabelId} className={styles.label}>
+              Week
+            </span>
+            <div role="group" aria-labelledby={weekLabelId}>
+              <WeekPicker
+                value={weekOfRange(from, to)}
+                onChange={(monday) => {
+                  setFrom(formatDay(monday))
+                  setTo(formatDay(addDays(monday, 6)))
+                }}
+              />
+            </div>
+          </div>
           <div className={styles.field}>
             <label className={styles.label} htmlFor={fromId}>
               From
@@ -245,6 +379,7 @@ export function ReportPage() {
           </p>
         )}
       </section>
+      {previewing && <FilePreview file={previewing} onClose={() => setPreviewing(null)} />}
     </>
   )
 }

@@ -36,30 +36,6 @@
   color: var(--color-muted);
 }
 
-.group {
-  display: grid;
-  gap: $space-2;
-  padding-top: $space-4;
-  border-top: 1px solid var(--color-border);
-}
-
-.groupTitle {
-  margin: 0;
-  font-size: 1.0625rem;
-}
-
-// Import and Export side by side; stacked on phones
-.groupInputs {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  align-items: start;
-  gap: $space-4;
-
-  @include mobile {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 // Date range and the Create report button, under both cards
 .create {
   display: grid;
@@ -205,4 +181,151 @@
 
 .breakdownNote {
   color: var(--color-muted);
+}
+
+// Category chips under "Add files": a check once a file is in
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-1;
+  padding: $space-1 $space-3;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+  font-weight: $weight-semibold;
+}
+
+.chipIcon {
+  flex: none;
+}
+
+.chipDone {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+  color: var(--color-text);
+
+  .chipIcon {
+    color: var(--color-success);
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.sortNote {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.sortProblem {
+  margin: 0;
+  color: var(--color-danger);
+}
+
+.sortList {
+  display: grid;
+  gap: $space-1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9375rem;
+}
+
+.sortFile {
+  font-weight: $weight-semibold;
+  overflow-wrap: anywhere;
+}
+
+// The added files, in the chips' order; same rows as the Output sample's file list
+.fileList {
+  display: grid;
+  gap: $space-2;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.file {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  padding: $space-2 $space-2 $space-2 $space-3;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+}
+
+.fileIcon {
+  flex: none;
+  color: var(--color-success);
+}
+
+.fileName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: $weight-semibold;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileTag {
+  flex: none;
+  padding: 2px $space-2;
+  border-radius: 999px;
+  background: var(--color-hover);
+  font-size: 0.8125rem;
+  font-weight: $weight-semibold;
+}
+
+.fileSize {
+  flex: none;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+
+  @include mobile {
+    display: none;
+  }
+}
+
+.fileAction {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: $radius-sm;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.fileRemove:hover {
+  color: var(--color-danger);
 }
