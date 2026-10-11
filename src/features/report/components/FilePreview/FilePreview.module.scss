@@ -91,6 +91,7 @@
 
 // Scrolls both ways inside the dialog; the title row stays in view
 .scroll {
+  min-height: 0;
   overflow: auto;
   border: 1px solid var(--color-border);
   border-radius: $radius-sm;
@@ -101,12 +102,14 @@
 }
 
 .table {
+  // Fixed widths from the colgroup, so columns do not shift as rows scroll in and out
+  table-layout: fixed;
+  width: max-content;
   border-collapse: collapse;
   font-size: 0.8125rem;
 
   th,
   td {
-    max-width: 18rem;
     padding: $space-1 $space-2;
     overflow: hidden;
     border-right: 1px solid var(--color-border);
@@ -124,7 +127,13 @@
     font-weight: $weight-bold;
   }
 
-  tbody tr:nth-child(even) td {
-    background: var(--color-hover);
+  // One line per row, matching ROW_HEIGHT in FilePreview.tsx
+  td {
+    height: 29px;
+    line-height: 20px;
   }
+}
+
+.striped td {
+  background: var(--color-hover);
 }

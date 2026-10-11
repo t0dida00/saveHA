@@ -1,7 +1,10 @@
 export type Trade = 'TP' | 'EU' | 'Asia' | 'Other'
 
-// Port names as the MBL lists write them, plus airports as the MAWB lists do (cities or airport names). TP is the trans-Pacific lane: US and Canada, inland points included.
-// Unlisted ports count as Other, so a new US/EU/Asia port has to be added here
+export const TRADES: Trade[] = ['TP', 'EU', 'Asia', 'Other']
+
+// The default lists Report settings starts from. Port names as the MBL lists write them, plus airports as the MAWB
+// lists do (cities or airport names). TP is the trans-Pacific lane: US and Canada, inland points included.
+// Unlisted ports count as Other; the Other list is for names that should be Other even though they contain a listed one
 const PORTS: Record<Exclude<Trade, 'Other'>, string[]> = {
   TP: [
     'ANCHORAGE',
@@ -279,12 +282,10 @@ const PORTS: Record<Exclude<Trade, 'Other'>, string[]> = {
   ],
 }
 
-const TRADE_BY_PORT = new Map(
-  Object.entries(PORTS).flatMap(([trade, ports]) => ports.map((port) => [port, trade as Trade] as const)),
-)
+export const DEFAULT_TRADE_PORTS: Record<Trade, string[]> = { ...PORTS, Other: [] }
 
 // "SHEKOU PT" → "SHEKOU", "MEMPHIS INT'L" → "MEMPHIS", "VÁCLAV HAVEL AIRPORT PRAGUE" → "VACLAV HAVEL PRAGUE"
-const cleanPort = (name: string) =>
+export const cleanPort = (name: string) =>
   name
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -294,24 +295,54 @@ const cleanPort = (name: string) =>
     .trim()
     .replace(/ (PT|PORT)$/, '')
 
-// For names that only contain a known one ("LOUISVILLE MUHAMMAD ALI" has LOUISVILLE), longest first.
-// Short names like BAR are left out so they cannot match inside unrelated names
-// Hyphens count as spaces there, so FRANKFURT-HAHN contains FRANKFURT
+// Hyphens count as spaces when looking inside a name, so FRANKFURT-HAHN contains FRANKFURT
 const asWords = (name: string) => ` ${name.replace(/-/g, ' ')} `
-const CONTAINED = [...TRADE_BY_PORT.keys()]
-  .filter((port) => port.length >= 4)
-  .sort((a, b) => b.length - a.length)
-  .map((port) => ({ port, words: asWords(port) }))
 
-/** Trade lane for a POD; names like "TINCAN/LAGOS" or "HAITIAN TERMINAL/ XIAMEN" match on any part */
-export function tradeFromPod(pod: unknown): Trade | null {
-  if (typeof pod !== 'string' || pod.trim() === '') return null
-  const parts = [pod, ...pod.split(/\/| - /)].map(cleanPort)
-  for (const part of parts) {
-    const trade = TRADE_BY_PORT.get(part)
-    if (trade) return trade
+/** A POD's lane and the listed name that matched it; `port` is null when no list has it, so it is Other */
+export type TradeMatch = { trade: Trade; port: string | null }
+
+/** Matches a POD against these lists; names like "TINCAN/LAGOS" match on any part */
+export function createTradeMatcher(ports: Record<Trade, string[]>) {
+  const tradeByPort = new Map<string, Trade>()
+  for (const trade of TRADES) for (const port of ports[trade]) tradeByPort.set(cleanPort(port), trade)
+
+  // For names that only contain a known one ("LOUISVILLE MUHAMMAD ALI" has LOUISVILLE), longest first.
+  // Short names like BAR are left out so they cannot match inside unrelated names
+  const contained = [...tradeByPort.keys()]
+    .filter((port) => port.length >= 4)
+    .sort((a, b) => b.length - a.length)
+    .map((port) => ({ port, words: asWords(port) }))
+
+  return (pod: unknown): TradeMatch | null => {
+    if (typeof pod !== 'string' || pod.trim() === '') return null
+    const parts = [pod, ...pod.split(/\/| - /)].map(cleanPort)
+    for (const part of parts) {
+      const trade = tradeByPort.get(part)
+      if (trade) return { trade, port: part }
+    }
+    const name = asWords(parts[0])
+    const match = contained.find(({ words }) => name.includes(words))
+    return match ? { trade: tradeByPort.get(match.port)!, port: match.port } : { trade: 'Other', port: null }
   }
-  const name = asWords(parts[0])
-  const contained = CONTAINED.find(({ words }) => name.includes(words))
-  return contained ? TRADE_BY_PORT.get(contained.port)! : 'Other'
+}
+
+/** Looks up a POD's trade lane in these lists */
+export function createTradeLookup(ports: Record<Trade, string[]>) {
+  const match = createTradeMatcher(ports)
+  return (pod: unknown): Trade | null => match(pod)?.trade ?? null
+}
+
+/** Trade lane for a POD with the default lists */
+export const tradeFromPod = createTradeLookup(DEFAULT_TRADE_PORTS)
+
+/** Saved lists checked for shape; a missing or malformed list falls back to its default */
+export function normalizeTradePorts(stored: unknown): Record<Trade, string[]> {
+  const lists = typeof stored === 'object' && stored !== null ? (stored as Record<string, unknown>) : {}
+  return Object.fromEntries(
+    TRADES.map((trade) => {
+      const list = lists[trade]
+      const valid = Array.isArray(list) && list.every((port) => typeof port === 'string')
+      return [trade, valid ? (list as string[]) : DEFAULT_TRADE_PORTS[trade]]
+    }),
+  ) as Record<Trade, string[]>
 }

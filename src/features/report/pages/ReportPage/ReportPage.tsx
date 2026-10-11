@@ -1,22 +1,19 @@
-import { Check, Circle, Eye, FileDown, FileSpreadsheet, X } from 'lucide-react'
+import { Check, Circle, Download, Eye, FileDown, FileSpreadsheet, Trash2, X } from 'lucide-react'
 import { useId, useState } from 'react'
-import { PageHeader } from '@/shared/components'
+import { PageHeader, useConfirmDialog } from '@/shared/components'
 import { FileInput } from '../../components/FileInput/FileInput'
 import { FilePreview } from '../../components/FilePreview/FilePreview'
+import { ReportCreatedDialog } from '../../components/ReportCreatedDialog/ReportCreatedDialog'
 import { WeekPicker } from '../../components/WeekPicker/WeekPicker'
 import { useSavedOutputSample } from '../../hooks/useSavedOutputSample'
-import {
-  AIR_EXPORT,
-  AIR_IMPORT,
-  buildReport,
-  type BuiltReport,
-  type InputKind,
-  type ReportInput,
-  SEA_EXPORT,
-  SEA_IMPORT,
-} from '../../utils/buildReport'
+import { MAX_SAVED_REPORTS, type SavedReport, useSavedReports } from '../../hooks/useSavedReports'
+import { useReportMapping } from '../../hooks/useReportMapping'
+import { useShortNames } from '../../hooks/useShortNames'
+import { useTradePorts } from '../../hooks/useTradePorts'
+import { buildReport, type BuiltReport, type ReportInput } from '../../utils/buildReport'
+import type { InputId } from '../../utils/mapping'
 import { detectInput, type InputSlot } from '../../utils/detectInput'
-import { downloadWorkbookFile } from '../../utils/excel'
+import { downloadWorkbookFile, XLSX_TYPE } from '../../utils/excel'
 import { formatFileSize } from '../../utils/spreadsheetFiles'
 import { addDays, formatDay, weekOfRange } from '../../utils/weeks'
 import styles from './ReportPage.module.scss'
@@ -33,12 +30,7 @@ const SLOTS = [
 type SlotKey = (typeof SLOTS)[number]['key']
 
 // Inputs the report is built from, in the order their rows go into it
-const SUPPORTED_INPUTS: { key: Exclude<SlotKey, 'volume'>; kind: InputKind }[] = [
-  { key: 'seaExport', kind: SEA_EXPORT },
-  { key: 'seaImport', kind: SEA_IMPORT },
-  { key: 'airExport', kind: AIR_EXPORT },
-  { key: 'airImport', kind: AIR_IMPORT },
-]
+const SUPPORTED_INPUTS: InputId[] = ['seaExport', 'seaImport', 'airExport', 'airImport']
 
 type Status =
   | { kind: 'idle' }
@@ -77,6 +69,14 @@ type SortStatus =
 // One file per category: Sea Import, Sea Export, Air Import, Air Export and Volume
 const MAX_FILES = 5
 
+const CREATED = new Intl.DateTimeFormat('en-GB', { dateStyle: 'short', timeStyle: 'short' })
+
+// "28/09/2026 – 04/10/2026" from yyyy-mm-dd
+const formatRange = (from: string, to: string) => {
+  const day = (iso: string) => iso.split('-').reverse().join('/')
+  return `${day(from)} – ${day(to)}`
+}
+
 export function ReportPage() {
   const inputsTitleId = useId()
   const createTitleId = useId()
@@ -86,7 +86,25 @@ export function ReportPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [status, setStatus] = useState<Status>({ kind: 'idle' })
-  const [outputSample, setOutputSample] = useSavedOutputSample()
+  const [outputSample, saveOutputSample] = useSavedOutputSample()
+  const { confirm, dialog } = useConfirmDialog()
+
+  // The output sample is kept for next time, so removing or replacing it asks first
+  const setOutputSample = (next: File[]) => {
+    const current = outputSample[0]
+    if (!current || (next[0] && next[0].name === current.name && next[0].size === current.size)) {
+      saveOutputSample(next)
+      return
+    }
+    confirm({
+      title: next[0] ? 'Replace the output sample?' : 'Remove the output sample?',
+      confirmLabel: next[0] ? 'Replace' : 'Remove',
+      message: next[0]
+        ? `${current.name} is replaced by ${next[0].name}, here and next time.`
+        : `${current.name} is no longer kept in this browser; add a sample again to create a report.`,
+      onConfirm: () => saveOutputSample(next),
+    })
+  }
   const [files, setFiles] = useState<Record<SlotKey, File | null>>({
     seaImport: null,
     seaExport: null,
@@ -96,6 +114,9 @@ export function ReportPage() {
   })
   const [sortStatus, setSortStatus] = useState<SortStatus>({ kind: 'idle' })
   const [previewing, setPreviewing] = useState<File | null>(null)
+  const { mapping } = useReportMapping()
+  const { ports } = useTradePorts()
+  const { shortNames } = useShortNames()
 
   // Files dropped on "Add files" go to their category, by name or else by what is in them. A category holds one
   // file, so a new one replaces it; a second file for the same category in one drop is skipped
@@ -109,6 +130,7 @@ export function ReportPage() {
     const placed = new Map<InputSlot, string>()
     const notes: { name: string; text: string; problem: boolean }[] = []
     const next = { ...files }
+    const replacing: { slot: SlotKey; was: File; now: File }[] = []
     dropped.forEach((file, index) => {
       const slot = slots[index]
       if (!slot) {
@@ -130,21 +152,62 @@ export function ReportPage() {
         notes.push({ name: file.name, text: 'set as the output sample', problem: false })
         return
       }
-      const replaced = next[slot]
-      if (replaced && replaced.name !== file.name) {
-        notes.push({ name: file.name, text: `replaced ${replaced.name} as ${SLOT_NAMES[slot]}`, problem: false })
+      const current = next[slot]
+      if (current && current.name !== file.name) {
+        replacing.push({ slot, was: current, now: file })
+        return
       }
       next[slot] = file
+      notes.push({ name: file.name, text: `added as ${SLOT_NAMES[slot]}`, problem: false })
     })
     setFiles(next)
     setSortStatus({ kind: 'done', notes })
+    if (replacing.length === 0) return
+
+    // New files are in; a file that would replace one already added asks first
+    confirm({
+      title: replacing.length === 1 ? 'Replace a file?' : `Replace ${replacing.length} files?`,
+      confirmLabel: 'Replace',
+      message: (
+        <ul className={styles.replaceList}>
+          {replacing.map(({ slot, was, now }) => (
+            <li key={slot}>
+              {SLOT_NAMES[slot]}: {was.name} → <strong>{now.name}</strong>
+            </li>
+          ))}
+        </ul>
+      ),
+      onConfirm: () => {
+        setFiles((current) => ({ ...current, ...Object.fromEntries(replacing.map(({ slot, now }) => [slot, now])) }))
+        setSortStatus({
+          kind: 'done',
+          notes: [
+            ...notes,
+            ...replacing.map(({ slot, was, now }) => ({
+              name: now.name,
+              text: `replaced ${was.name} as ${SLOT_NAMES[slot]}`,
+              problem: false,
+            })),
+          ],
+        })
+      },
+    })
   }
 
-  const removeFile = (key: SlotKey) => setFiles((current) => ({ ...current, [key]: null }))
-
-  const reportInputs: ReportInput[] = SUPPORTED_INPUTS.flatMap(({ key, kind }) => {
+  const removeFile = (key: SlotKey) => {
     const file = files[key]
-    return file ? [{ kind, file }] : []
+    if (!file) return
+    confirm({
+      title: 'Remove this file?',
+      confirmLabel: 'Remove',
+      message: `${file.name} is removed from ${SLOT_NAMES[key]}.`,
+      onConfirm: () => setFiles((current) => ({ ...current, [key]: null })),
+    })
+  }
+
+  const reportInputs: ReportInput[] = SUPPORTED_INPUTS.flatMap((id) => {
+    const file = files[id]
+    return file ? [{ id, file }] : []
   })
   const missing = [
     outputSample.length === 0 && 'an output sample',
@@ -156,15 +219,55 @@ export function ReportPage() {
   const rangeInvalid = Boolean(from && to && from > to)
   const working = status.kind === 'working'
 
+  const { reports: savedReports, add: addSavedReport, remove: removeSavedReport } = useSavedReports()
+
+  const asFile = (report: SavedReport) => new File([report.data], report.name, { type: XLSX_TYPE })
+
+  const deleteSavedReport = (report: SavedReport) =>
+    confirm({
+      title: 'Delete this report?',
+      confirmLabel: 'Delete',
+      message: `${report.name}, created ${CREATED.format(new Date(report.createdAt))}, is removed from this browser. A copy you downloaded stays where it is.`,
+      onConfirm: () => removeSavedReport(report.id),
+    })
+
+  const [created, setCreated] = useState<{
+    saved: SavedReport
+    report: Omit<BuiltReport, 'buffer'>
+    inputNames: string[]
+  } | null>(null)
+
   const createReport = async () => {
     setStatus({ kind: 'working' })
     try {
       const sample = outputSample[0]
-      const { buffer, ...report } = await buildReport(sample, reportInputs, files.volume!, { from, to })
-      downloadWorkbookFile(buffer, reportFileName(new Date()))
+      const { buffer, ...report } = await buildReport(
+        sample,
+        reportInputs,
+        files.volume!,
+        { from, to },
+        mapping,
+        ports,
+        shortNames,
+      )
+      const createdAt = new Date()
+      const data = new Blob([buffer], { type: XLSX_TYPE })
+      const name = reportFileName(createdAt)
+      // Kept in Recent reports and shown in a dialog; it downloads only when asked
+      const saved: SavedReport = {
+        id: crypto.randomUUID(),
+        name,
+        createdAt: createdAt.toISOString(),
+        rowCount: report.rowCount,
+        from,
+        to,
+        data,
+      }
+      await addSavedReport(saved)
       // Every Sea and Air input with a file, in the chips' order
       const inputNames = SLOTS.filter(({ key }) => key !== 'volume' && files[key]).map(({ name }) => name)
       setStatus({ kind: 'done', report, inputNames })
+      setCreated({ saved, report, inputNames })
     } catch (error) {
       setStatus({ kind: 'error', message: error instanceof Error ? error.message : 'The report could not be created.' })
     }
@@ -337,8 +440,8 @@ export function ReportPage() {
             !rangeInvalid &&
             status.kind === 'done' &&
             (status.report.rowCount === 0
-              ? 'No rows to add in that range. The report was downloaded empty.'
-              : `Report downloaded with ${countText(status.report.rowCount, 'row')}:`)}
+              ? 'No rows to add in that range. The report was created empty.'
+              : `Report created with ${countText(status.report.rowCount, 'row')}:`)}
         </p>
         {missing.length === 0 && !rangeInvalid && status.kind === 'done' && (
           <ul className={styles.breakdown}>
@@ -378,8 +481,77 @@ export function ReportPage() {
             {status.message}
           </p>
         )}
+
+        {savedReports.length > 0 && (
+          <div className={styles.saved}>
+            <h3 className={styles.savedTitle}>
+              Recent reports <span className={styles.savedNote}>· last {MAX_SAVED_REPORTS} kept in this browser</span>
+            </h3>
+            <ul className={styles.fileList}>
+              {savedReports.map((report) => (
+                <li key={report.id} className={styles.file}>
+                  <FileSpreadsheet size={18} aria-hidden="true" className={styles.fileIcon} />
+                  <span className={styles.savedText}>
+                    <span className={styles.fileName} title={report.name}>
+                      {report.name}
+                    </span>
+                    <span className={styles.savedMeta}>
+                      {formatRange(report.from, report.to)} · {report.rowCount} {report.rowCount === 1 ? 'row' : 'rows'}{' '}
+                      · created {CREATED.format(new Date(report.createdAt))}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.fileAction}
+                    onClick={() => setPreviewing(asFile(report))}
+                    aria-label={`Preview ${report.name}`}
+                    title="Preview"
+                  >
+                    <Eye size={16} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.fileAction}
+                    onClick={() => downloadWorkbookFile(report.data, report.name)}
+                    aria-label={`Download ${report.name}`}
+                    title="Download"
+                  >
+                    <Download size={16} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.fileAction} ${styles.fileRemove}`}
+                    onClick={() => deleteSavedReport(report)}
+                    aria-label={`Delete ${report.name}`}
+                    title="Delete"
+                  >
+                    <Trash2 size={16} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
       {previewing && <FilePreview file={previewing} onClose={() => setPreviewing(null)} />}
+      {created && (
+        <ReportCreatedDialog
+          name={created.saved.name}
+          range={formatRange(created.saved.from, created.saved.to)}
+          report={created.report}
+          inputNames={created.inputNames}
+          onPreview={() => {
+            setPreviewing(asFile(created.saved))
+            setCreated(null)
+          }}
+          onDownload={() => {
+            downloadWorkbookFile(created.saved.data, created.saved.name)
+            setCreated(null)
+          }}
+          onClose={() => setCreated(null)}
+        />
+      )}
+      {dialog}
     </>
   )
 }

@@ -48,8 +48,10 @@ export function cellDate(cell: Cell): Date | null {
   return value instanceof Date && !Number.isNaN(value.getTime()) ? value : null
 }
 
-export function downloadWorkbookFile(buffer: ArrayBuffer, fileName: string) {
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+export const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+export function downloadWorkbookFile(data: ArrayBuffer | Blob, fileName: string) {
+  const blob = data instanceof Blob ? data : new Blob([data], { type: XLSX_TYPE })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url

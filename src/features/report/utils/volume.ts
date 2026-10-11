@@ -1,4 +1,5 @@
 import { headerColumns, loadWorkbook, normalize, plainValue } from './excel'
+import type { VolumeField } from './mapping'
 
 export type VolumeInfo = {
   shippingType: string | null
@@ -9,16 +10,7 @@ export type VolumeInfo = {
   coload: boolean
 }
 
-const TITLES = {
-  fileNo: 'File No.',
-  shippingType: 'Shipping Type',
-  customer: 'Customer',
-  salesType: 'Sales Type',
-  salesPerson: 'Sales Person',
-  coLoader: 'Co-Loader',
-} as const
-
-// The Volume report has a title block above its table, so the header is the first row with a File No. title
+// The Volume report has a title block above its table, so the header is the first row with the File No. title
 const HEADER_SEARCH_ROWS = 30
 
 const text = (value: unknown) =>
@@ -28,19 +20,19 @@ const text = (value: unknown) =>
  * File No. → the Volume report's details for it. A File No. can have one row per HB/L: like VLOOKUP, its first
  * row gives the details, and it is a co-load when any of its rows has a co-loader.
  */
-export async function readVolume(file: File) {
+export async function readVolume(file: File, titles: Record<VolumeField, string>) {
   const sheet = (await loadWorkbook(file)).worksheets[0]
 
   let headerRow = 0
   for (let r = 1; r <= Math.min(sheet.rowCount, HEADER_SEARCH_ROWS) && !headerRow; r++) {
-    if (headerColumns(sheet, r).has(normalize(TITLES.fileNo))) headerRow = r
+    if (headerColumns(sheet, r).has(normalize(titles.fileNo))) headerRow = r
   }
   if (!headerRow)
-    throw new Error(`${file.name} has no "${TITLES.fileNo}" column, so it cannot be matched to the report.`)
+    throw new Error(`${file.name} has no "${titles.fileNo}" column, so it cannot be matched to the report.`)
 
   const columns = headerColumns(sheet, headerRow)
   const column = (title: string) => columns.get(normalize(title))
-  const missing = Object.values(TITLES)
+  const missing = Object.values(titles)
     .filter((title) => column(title) === undefined)
     .map((title) => `"${title}" in Volume`)
 
@@ -51,19 +43,19 @@ export async function readVolume(file: File) {
       const index = column(title)
       return index === undefined ? null : text(plainValue(row.getCell(index).value))
     }
-    const fileNo = get(TITLES.fileNo)
+    const fileNo = get(titles.fileNo)
     if (!fileNo) continue
-    const coload = get(TITLES.coLoader) !== null
+    const coload = get(titles.coLoader) !== null
     const known = byFileNo.get(fileNo)
     if (known) {
       known.coload ||= coload
       continue
     }
     byFileNo.set(fileNo, {
-      shippingType: get(TITLES.shippingType),
-      customer: get(TITLES.customer),
-      salesType: get(TITLES.salesType),
-      salesPerson: get(TITLES.salesPerson),
+      shippingType: get(titles.shippingType),
+      customer: get(titles.customer),
+      salesType: get(titles.salesType),
+      salesPerson: get(titles.salesPerson),
       coload,
     })
   }
