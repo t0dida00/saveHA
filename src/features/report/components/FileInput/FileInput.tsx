@@ -5,7 +5,11 @@ import styles from './FileInput.module.scss'
 
 type FileInputProps = {
   title: string
-  description: string
+  description?: string
+  /** Shorter layout for use inside another card: no card frame, one-line drop zone, no icon or hint */
+  compact?: boolean
+  /** Accessible name when the visible title alone is ambiguous, e.g. "Sea Import" for "Import" */
+  label?: string
   /** Multiple files can be added; otherwise a new file replaces the current one */
   multiple?: boolean
   files: File[]
@@ -16,7 +20,7 @@ type FileInputProps = {
 const fileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`
 
 // CSV / Excel picker: drop files on it or browse, then remove any from the list
-export function FileInput({ title, description, multiple = false, files, onChange }: FileInputProps) {
+export function FileInput({ title, description, compact = false, label, multiple = false, files, onChange }: FileInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const titleId = useId()
   const errorId = useId()
@@ -59,12 +63,16 @@ export function FileInput({ title, description, multiple = false, files, onChang
   }
 
   return (
-    <section className={styles.section} aria-labelledby={titleId}>
+    <section
+      className={`${styles.section} ${compact ? styles.compact : ''}`}
+      aria-label={label}
+      aria-labelledby={label ? undefined : titleId}
+    >
       <div className={styles.head}>
         <h2 id={titleId} className={styles.title}>
           {title}
         </h2>
-        <p className={styles.description}>{description}</p>
+        {description && <p className={styles.description}>{description}</p>}
       </div>
 
       <div
@@ -76,21 +84,24 @@ export function FileInput({ title, description, multiple = false, files, onChang
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
       >
-        <Upload size={24} aria-hidden="true" className={styles.dropIcon} />
+        {!compact && <Upload size={24} aria-hidden="true" className={styles.dropIcon} />}
         <p className={styles.dropText}>
           Drop {multiple ? 'files' : 'a file'} here or{' '}
           <button type="button" className={styles.browse} onClick={() => inputRef.current?.click()}>
             browse
           </button>
         </p>
-        <p className={styles.hint}>CSV or Excel (.csv, .xlsx, .xls){multiple ? ', several at once' : ', one file'}</p>
+        {!compact && (
+          <p className={styles.hint}>CSV or Excel (.csv, .xlsx, .xls){multiple ? ', several at once' : ', one file'}</p>
+        )}
         <input
           ref={inputRef}
           type="file"
           className={styles.input}
           accept={SPREADSHEET_ACCEPT}
           multiple={multiple}
-          aria-labelledby={titleId}
+          aria-label={label}
+          aria-labelledby={label ? undefined : titleId}
           aria-describedby={error ? errorId : undefined}
           onChange={(event) => {
             addFiles(Array.from(event.target.files ?? []))

@@ -15,6 +15,30 @@
   margin: 0;
 }
 
+// Short variant: no card frame, title and drop zone only
+.compact {
+  padding: 0;
+  border: 0;
+  background: none;
+
+  @include mobile {
+    padding: 0;
+  }
+
+  .title {
+    font-size: 0.9375rem;
+  }
+
+  .drop {
+    margin-top: $space-2;
+    padding: $space-2 $space-3;
+  }
+
+  .list {
+    margin-top: $space-2;
+  }
+}
+
 .description {
   margin: $space-2 0 0;
   color: var(--color-muted);
