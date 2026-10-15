@@ -1,5 +1,23 @@
-import { Check, Circle, Download, Eye, FileDown, FileSpreadsheet, Trash2, X } from 'lucide-react'
-import { useId, useState } from 'react'
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import { restrictToParentElement, restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { Check, Circle, Download, Eye, FileDown, FileSpreadsheet, GripVertical, Trash2, X } from 'lucide-react'
+import { useId, useState, type ReactNode } from 'react'
 import { PageHeader, useConfirmDialog } from '@/shared/components'
 import { FileInput } from '../../components/FileInput/FileInput'
 import { FilePreview } from '../../components/FilePreview/FilePreview'
@@ -29,7 +47,7 @@ const SLOTS = [
 
 type SlotKey = (typeof SLOTS)[number]['key']
 
-// Inputs the report is built from, in the order their rows go into it
+// Inputs the report is built from; their rows go into it in this order until the files are dragged into another
 const SUPPORTED_INPUTS: InputId[] = ['seaExport', 'seaImport', 'airExport', 'airImport']
 
 type Status =
@@ -77,6 +95,72 @@ const formatRange = (from: string, to: string) => {
   return `${day(from)} – ${day(to)}`
 }
 
+type FileRowProps = {
+  file: File
+  name: string
+  /** Sortable id; without one the row stays put */
+  sortId?: string
+  onPreview: () => void
+  onRemove: () => void
+}
+
+// One added file; Sea and Air files get a handle to drag them into the order their rows go into the report
+function FileRow({ file, name, sortId, onPreview, onRemove }: FileRowProps) {
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({
+    id: sortId ?? file.name,
+    disabled: !sortId,
+  })
+  let handle: ReactNode = <span className={styles.handleSpace} aria-hidden="true" />
+  if (sortId) {
+    handle = (
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className={styles.handle}
+        aria-label={`Move ${name}`}
+        title="Drag to reorder"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical size={18} aria-hidden="true" />
+      </button>
+    )
+  }
+  return (
+    <li
+      ref={sortId ? setNodeRef : undefined}
+      className={`${styles.file} ${styles.sortableFile} ${isDragging ? styles.dragging : ''}`}
+      style={sortId ? { transform: CSS.Translate.toString(transform), transition } : undefined}
+    >
+      {handle}
+      <FileSpreadsheet size={18} aria-hidden="true" className={styles.fileIcon} />
+      <span className={styles.fileName} title={file.name}>
+        {file.name}
+      </span>
+      <span className={styles.fileTag}>{name}</span>
+      <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+      <button
+        type="button"
+        className={styles.fileAction}
+        onClick={onPreview}
+        aria-label={`Preview ${file.name}`}
+        title="Preview"
+      >
+        <Eye size={16} aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className={`${styles.fileAction} ${styles.fileRemove}`}
+        onClick={onRemove}
+        aria-label={`Remove ${file.name}`}
+        title="Remove"
+      >
+        <X size={16} aria-hidden="true" />
+      </button>
+    </li>
+  )
+}
+
 export function ReportPage() {
   const inputsTitleId = useId()
   const createTitleId = useId()
@@ -113,6 +197,19 @@ export function ReportPage() {
     volume: null,
   })
   const [sortStatus, setSortStatus] = useState<SortStatus>({ kind: 'idle' })
+  // The order the Sea and Air files' rows go into the report, as dragged in the file list
+  const [inputOrder, setInputOrder] = useState<InputId[]>(SUPPORTED_INPUTS)
+  // Small move threshold so a click on the handle isn't a drag; arrow keys reorder from the keyboard
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return
+    setInputOrder((current) =>
+      arrayMove(current, current.indexOf(active.id as InputId), current.indexOf(over.id as InputId)),
+    )
+  }
   const [previewing, setPreviewing] = useState<File | null>(null)
   const { mapping } = useReportMapping()
   const { ports } = useTradePorts()
@@ -205,7 +302,7 @@ export function ReportPage() {
     })
   }
 
-  const reportInputs: ReportInput[] = SUPPORTED_INPUTS.flatMap((id) => {
+  const reportInputs: ReportInput[] = inputOrder.flatMap((id) => {
     const file = files[id]
     return file ? [{ id, file }] : []
   })
@@ -264,8 +361,8 @@ export function ReportPage() {
         data,
       }
       await addSavedReport(saved)
-      // Every Sea and Air input with a file, in the chips' order
-      const inputNames = SLOTS.filter(({ key }) => key !== 'volume' && files[key]).map(({ name }) => name)
+      // Every Sea and Air input with a file, in the order their rows went into the report
+      const inputNames = reportInputs.map(({ id }) => SLOT_NAMES[id])
       setStatus({ kind: 'done', report, inputNames })
       setCreated({ saved, report, inputNames })
     } catch (error) {
@@ -333,40 +430,38 @@ export function ReportPage() {
           </div>
 
           {SLOTS.some(({ key }) => files[key]) && (
-            <ul className={styles.fileList}>
-              {SLOTS.map(({ key, name }) => {
-                const file = files[key]
-                if (!file) return null
-                return (
-                  <li key={key} className={styles.file}>
-                    <FileSpreadsheet size={18} aria-hidden="true" className={styles.fileIcon} />
-                    <span className={styles.fileName} title={file.name}>
-                      {file.name}
-                    </span>
-                    <span className={styles.fileTag}>{name}</span>
-                    <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
-                    <button
-                      type="button"
-                      className={styles.fileAction}
-                      onClick={() => setPreviewing(file)}
-                      aria-label={`Preview ${file.name}`}
-                      title="Preview"
-                    >
-                      <Eye size={16} aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className={`${styles.fileAction} ${styles.fileRemove}`}
-                      onClick={() => removeFile(key)}
-                      aria-label={`Remove ${file.name}`}
-                      title="Remove"
-                    >
-                      <X size={16} aria-hidden="true" />
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+              onDragEnd={handleDragEnd}
+            >
+              {reportInputs.length > 1 && (
+                <p className={styles.sortHint}>Drag the Sea and Air files into the order their rows go into the report.</p>
+              )}
+              <SortableContext items={reportInputs.map(({ id }) => id)} strategy={verticalListSortingStrategy}>
+                <ul className={styles.fileList}>
+                  {reportInputs.map(({ id, file }) => (
+                    <FileRow
+                      key={id}
+                      file={file}
+                      name={SLOT_NAMES[id]}
+                      sortId={reportInputs.length > 1 ? id : undefined}
+                      onPreview={() => setPreviewing(file)}
+                      onRemove={() => removeFile(id)}
+                    />
+                  ))}
+                  {files.volume && (
+                    <FileRow
+                      file={files.volume}
+                      name={SLOT_NAMES.volume}
+                      onPreview={() => setPreviewing(files.volume)}
+                      onRemove={() => removeFile('volume')}
+                    />
+                  )}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
         </section>
       </div>
