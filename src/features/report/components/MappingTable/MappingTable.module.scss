@@ -1,0 +1,152 @@
+@use '@/styles/tokens' as *;
+
+// Scrolls sideways; the Input column stays in view
+.scroll {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.875rem;
+
+  th,
+  td {
+    min-width: 7.5rem;
+    padding: $space-2 $space-3;
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-weight: $weight-bold;
+    white-space: nowrap;
+  }
+
+  tbody tr:last-child > * {
+    border-bottom: 0;
+  }
+}
+
+.corner,
+.rowHead {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 9.5rem;
+  text-align: left !important;
+}
+
+.rowHead {
+  background: var(--color-surface);
+}
+
+.rowName {
+  display: block;
+  font-weight: $weight-bold;
+}
+
+.rowDetail {
+  display: block;
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: $weight-regular;
+}
+
+// Copied from a column with this title
+.source {
+  background: color-mix(in srgb, var(--color-success) 14%, var(--color-surface));
+  font-weight: $weight-semibold;
+}
+
+// The same value on every row
+.fixed {
+  font-weight: $weight-bold;
+}
+
+// Looked up or worked out rather than copied
+.derived {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.empty {
+  color: var(--color-muted);
+}
+
+.none {
+  background: var(--color-hover);
+}
+
+.note {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: $weight-regular;
+}
+
+// Each cell is a button that opens a text box; it fills the cell so anywhere in it can be clicked
+.cellButton,
+.titleButton {
+  display: block;
+  width: 100%;
+  padding: $space-2 $space-3;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: text;
+
+  &:hover {
+    outline: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+    outline-offset: -2px;
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+    outline-offset: -3px;
+  }
+}
+
+.titleButton:hover {
+  outline-color: color-mix(in srgb, var(--color-on-primary) 60%, transparent);
+}
+
+// The button carries the padding, so cells with one have none of their own
+.table td:has(> .cellButton),
+.table th:has(> .titleButton),
+.table td.editing,
+.table th:has(> .input) {
+  padding: 0;
+}
+
+.input {
+  width: 100%;
+  min-width: 9rem;
+  padding: $space-2 $space-3;
+  border: 2px solid var(--color-primary);
+  border-radius: 0;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: center;
+
+  &:focus-visible {
+    outline: none;
+  }
+}

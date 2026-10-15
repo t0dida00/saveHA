@@ -1,1 +1,2 @@
-export { SettingsPage } from './pages/SettingsPage/SettingsPage'
+export { ReportSettingsPage } from './pages/ReportSettingsPage/ReportSettingsPage'
+export { ScheduleSettingsPage } from './pages/ScheduleSettingsPage/ScheduleSettingsPage'

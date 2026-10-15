@@ -15,6 +15,30 @@
   margin: 0;
 }
 
+// Short variant: no card frame, title and drop zone only
+.compact {
+  padding: 0;
+  border: 0;
+  background: none;
+
+  @include mobile {
+    padding: 0;
+  }
+
+  .title {
+    font-size: 0.9375rem;
+  }
+
+  .drop {
+    margin-top: $space-2;
+    padding: $space-2 $space-3;
+  }
+
+  .list {
+    margin-top: $space-2;
+  }
+}
+
 .description {
   margin: $space-2 0 0;
   color: var(--color-muted);
@@ -29,7 +53,9 @@
   border: 2px dashed var(--color-border);
   border-radius: $radius-md;
   text-align: center;
-  transition: background-color 0.15s $ease-out, border-color 0.15s $ease-out;
+  transition:
+    background-color 0.15s $ease-out,
+    border-color 0.15s $ease-out;
 
   @include reduced-motion {
     transition: none;
@@ -122,6 +148,30 @@
   flex: none;
   color: var(--color-muted);
   font-size: 0.875rem;
+}
+
+// Preview: same size as Remove, without its red hover
+.fileAction {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: $radius-sm;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-text);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
 }
 
 .remove {

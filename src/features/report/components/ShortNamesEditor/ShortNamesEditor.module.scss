@@ -1,0 +1,290 @@
+@use '@/styles/tokens' as *;
+
+.editor {
+  display: grid;
+  gap: $space-4;
+}
+
+// Column | Original text | Short text | icon, full width; rows after the first leave the Column cell empty
+.form {
+  display: grid;
+  gap: $space-3;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: minmax(10rem, 16rem) minmax(0, 1fr) minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: $space-2 $space-3;
+
+  @include mobile {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px;
+
+    // On phones the Column picker takes its own line above the rows
+    > .label:first-child,
+    > .selectWrap {
+      grid-column: 1 / -1;
+    }
+
+    > .spacer,
+    > span:nth-child(4) {
+      display: none;
+    }
+  }
+}
+
+.label {
+  font-weight: $weight-semibold;
+}
+
+.selectWrap {
+  position: relative;
+}
+
+.select,
+.input {
+  width: 100%;
+  min-height: 44px;
+  padding: $space-2 $space-3;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+
+  &:focus-visible {
+    @include focus-ring;
+    border-color: var(--color-primary);
+  }
+}
+
+.select {
+  appearance: none;
+  padding-right: $space-6;
+  cursor: pointer;
+}
+
+.selectIcon {
+  position: absolute;
+  top: 50%;
+  right: $space-3;
+  color: var(--color-muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.iconButton {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--color-border);
+  border-radius: $radius-md;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.removeRow:hover {
+  color: var(--color-danger);
+}
+
+// Hint and message on the left, Add short names on the right
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: $space-2 $space-4;
+}
+
+.hint {
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.message,
+.messageProblem {
+  flex: 1;
+  font-size: 0.9375rem;
+}
+
+.message {
+  color: var(--color-muted);
+}
+
+.messageProblem {
+  color: var(--color-danger);
+}
+
+.add {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-2;
+  margin-left: auto;
+  padding: $space-2 $space-4;
+  border: 2px solid var(--color-primary);
+  border-radius: $radius-md;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: inherit;
+  font-weight: $weight-bold;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-primary-strong);
+    background: var(--color-primary-strong);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+// One list, grouped by column: a heading row per column, then its short names
+.table {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: $radius-md;
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  background: var(--color-surface);
+  font-size: 0.9375rem;
+
+  thead th {
+    padding: $space-2 $space-3;
+    background: var(--color-primary);
+    color: var(--color-on-primary);
+    font-size: 0.8125rem;
+    font-weight: $weight-bold;
+    text-align: left;
+  }
+
+  td {
+    padding: $space-1 $space-3;
+    border-top: 1px solid var(--color-border);
+    overflow-wrap: anywhere;
+  }
+}
+
+.group th {
+  padding: 0;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-hover);
+}
+
+// The whole heading row is the accordion button
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: $space-2;
+  width: 100%;
+  padding: $space-2 $space-3;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: $weight-bold;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    @include focus-ring;
+    outline-offset: -3px;
+  }
+}
+
+.chevron {
+  flex: none;
+  color: var(--color-muted);
+  transition: transform 150ms ease;
+
+  @include reduced-motion {
+    transition: none;
+  }
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.columnHead {
+  width: 22%;
+}
+
+.columnCell {
+  color: var(--color-muted);
+}
+
+.count {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: $weight-semibold;
+}
+
+.short {
+  font-weight: $weight-bold;
+}
+
+.removeCell {
+  width: 1%;
+}
+
+.remove {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: $radius-sm;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover);
+    color: var(--color-danger);
+  }
+
+  &:focus-visible {
+    @include focus-ring;
+  }
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+// Old → new short names listed in the change warning
+.changes {
+  display: grid;
+  gap: $space-1;
+  margin: 0;
+  padding-left: $space-4;
+}

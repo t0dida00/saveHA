@@ -1,0 +1,48 @@
+@use '@/styles/tokens' as *;
+
+// Column mapping, then Trade lanes
+.sections {
+  display: grid;
+  gap: $space-6;
+}
+
+.section {
+  display: grid;
+  gap: $space-4;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: $space-4;
+}
+
+.title {
+  margin: 0;
+}
+
+.description {
+  max-width: 48rem;
+  margin: $space-2 0 0;
+  color: var(--color-muted);
+}
+
+.help {
+  display: grid;
+  gap: $space-1;
+  margin: 0;
+  padding-left: $space-5;
+  color: var(--color-muted);
+  font-size: 0.9375rem;
+
+  code {
+    padding: 1px $space-1;
+    border-radius: $radius-sm;
+    background: var(--color-hover);
+    color: var(--color-text);
+    font-size: 0.875rem;
+  }
+}
