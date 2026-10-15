@@ -1,5 +1,7 @@
 # SaveHA
 
+[![SaveHA preview](docs/preview.png)](https://saveha.dinhapps.com)
+
 SaveHA is a web app for checking ONE shipping-line vessel schedules from Vietnam (HPH, VUT) to North American ports. It installs as an app (PWA). You pick the services and routes, it asks a schedule API for the weekly sailings, and it keeps the resulting CSV files so you can preview, download and compare them.
 
 Built with React 19, TypeScript, Vite and SCSS modules.
